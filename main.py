@@ -18,8 +18,11 @@ def debug():
     L=8000
     R=50
     C=401
-    # rodar_modelo_albano(W,L,R,C)
-    rodar_modelo_albano_tamanhos(W,L,R,C,1.1)
+    strip_p  = rodar_albano_tamanhos(W,L,R,C,0.94)
+    strip_m  = rodar_albano_tamanhos(W,L,R,C,1.00)
+    strip_g  = rodar_albano_tamanhos(W,L,R,C,1.06)
+    strip_gg = rodar_albano_tamanhos(W,L,R,C,1.13)
+    print(f"P:{strip_p[1]},M:{strip_m[1]},G:{strip_g[1]},GG:{strip_gg[1]}")
     pass
 # ---------------------------------
 def rodar_modelo(W,L,R,C,T,q):
@@ -31,7 +34,7 @@ def rodar_modelo(W,L,R,C,T,q):
 # ---------------------------------
 # Modelos de teste
 # ---------------------------------
-def rodar_modelo_albano_tamanhos(W,L,R,C,escalar):
+def rodar_albano_tamanhos(W,L,R,C,escalar):
     T_albano = [
             [(0,0), (966,56), (1983,-86), (2185,152), (2734,131), (3000,681), (2819,814), (2819,1274), (3000,1407), (2734,1957), (2185,1936), (1983,2174), (966,2032), (0,2088)],
 
@@ -78,6 +81,7 @@ def rodar_modelo_albano(W,L,R,C):
     demanda_q = (1,1,2,2,2,2,1,1)
     rodar_modelo(W,L,R,C, T_albano, demanda_q)
     pass
+
 def rodar_modelo_hono(W,L,R,C):
     T = [
         [],
