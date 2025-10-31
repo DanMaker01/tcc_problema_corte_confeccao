@@ -1,6 +1,7 @@
 # ---------------------------------
-# ---------------------------------
 from modelo import Modelo
+# ---------------------------------
+
 # ---------------------------------
 # Funções
 # ---------------------------------
@@ -34,7 +35,6 @@ def rodar_modelo_albano(W,L,R,C):
     demanda_q = (1,1,2,2,2,2,1,1)
     rodar_modelo(W,L,R,C, T_albano, demanda_q)
     pass
-
 def rodar_modelo_hono(W,L,R,C):
     T = [
         [],
@@ -43,27 +43,25 @@ def rodar_modelo_hono(W,L,R,C):
     ]
     q = (1,1,1)
     rodar_modelo(W,L,R,C,T,q)
-
+# ---------------------------------
 def rodar_modelo(W,L,R,C,T,q):
     modelo = Modelo(W,L,R,C,T,q)
     modelo.rodar()
     pass
-
+# ---------------------------------
 def debug():
-    di = {(0,1,1,2):10,
-          (0,2,1,1):19,
-          (1,2,0,1):18}
-    
-    chave = [0,2,1,2]
-
-    a = di.get(tuple(chave))
-    print(a)
+    W=4900
+    L=8000
+    R=50
+    C=401
+    rodar_modelo_albano(W,L,R,C)
     pass
+# ---------------------------------
 
 # ---------------------------------
 # Execução
 # ---------------------------------
-main()
-# debug()
+# main()
+debug()
 # ---------------------------------
 # ---------------------------------
