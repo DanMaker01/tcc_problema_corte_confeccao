@@ -8,10 +8,10 @@ import traceback
 import matplotlib.pyplot as plt
 
 # ========= PARAMETROS DO PROBLEMA =========
-ITEM_TYPES = {"P": 1.5, "M": 1.55, "G": 1.90, "GG": 2.20}
-n=10
-CAMISA_COUNTS = {"P": n*5, "M": n*15, "G": n*10, "GG": n*7}
-BIN_CAPACITY = 5.0
+ITEM_TYPES = {"P": 5206.04, "M": 5700.0, "G": 6396.04, "GG": 7716.65}
+n=1
+CAMISA_COUNTS = {"P": n*10, "M": n*10, "G": n*10, "GG": n*10}
+BIN_CAPACITY = 20000
 
 # PARAMETROS DO ALG. GENÉTICO
 POP_SIZE = 100
@@ -109,17 +109,20 @@ import math
 def desenhar_bins_e_grafico(bins, geracao, desperdicio, historico, max_desperdicio,
                             destaque=False, melhoria_valor=None, melhoria_bins=None):
     screen.fill(BG)
-    bin_altura = 16
+    bin_altura = 20  # Aumentei a altura para melhor visualização
     altura_disponivel = ALTURA_TELA - 100
     bins_por_coluna = altura_disponivel // bin_altura
     total_bins = len(bins)
     num_colunas = max(1, math.ceil(total_bins / bins_por_coluna))
 
-    area_grafico = 250  # largura reservada à direita para info e gráfico
+    area_grafico = 250
     largura_coluna = (LARGURA_TELA - area_grafico) // num_colunas
 
-    escala_max = 80
-    escala = min(escala_max, largura_coluna / BIN_CAPACITY - 5)
+    # CORREÇÃO PRINCIPAL: Aumentar significativamente a escala
+    escala = largura_coluna / BIN_CAPACITY * 0.9  # Usar 90% da largura disponível
+    
+    # Garantir largura mínima para cada item
+    largura_minima = 5
 
     for i, bin in enumerate(bins[:bins_por_coluna * num_colunas]):
         coluna = i // bins_por_coluna
@@ -129,20 +132,22 @@ def desenhar_bins_e_grafico(bins, geracao, desperdicio, historico, max_desperdic
 
         x_atual = x_inicial
         for _, tipo, tamanho in bin:
-            largura = round(tamanho * escala)
-            pygame.draw.rect(screen, CORES[tipo], (x_atual, y, largura, 12))
+            largura = max(largura_minima, round(tamanho * escala))
+            pygame.draw.rect(screen, CORES[tipo], (x_atual, y, largura, bin_altura - 4))
+            
             if destaque:
-                pygame.draw.rect(screen, BRANCO, (x_atual, y, largura, 12), 1)
+                pygame.draw.rect(screen, BRANCO, (x_atual, y, largura, bin_altura - 4), 1)
 
-            # Desenha a letra correspondente, centralizada no retângulo
-            letra = tipo
-            letra_surface = font.render(letra, True, BRANCO)
-            letra_rect = letra_surface.get_rect(center=(x_atual + largura // 2, y + 6))
-            screen.blit(letra_surface, letra_rect)
+            # Desenha a letra apenas se houver espaço suficiente
+            if largura >= 15:  # Só desenha texto se tiver espaço
+                letra = tipo
+                letra_surface = font.render(letra, True, BRANCO)
+                letra_rect = letra_surface.get_rect(center=(x_atual + largura // 2, y + (bin_altura - 4) // 2))
+                screen.blit(letra_surface, letra_rect)
 
-            x_atual += largura + 1  # avança a largura desenhada + espaçamento
+            x_atual += largura + 1
 
-
+    # Resto do código permanece igual...
     # Info lateral à direita
     base_x = num_colunas * (largura_coluna + 10) + 10
     screen.blit(font.render(f"Geração: {geracao + 1}", True, BRANCO), (base_x, 20))

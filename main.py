@@ -6,13 +6,6 @@ from modelo import Modelo
 # ---------------------------------
 # Funções
 # ---------------------------------
-def main():
-    W=4900
-    L=8000
-    R=41
-    C=321
-    rodar_modelo_albano(W,L,R,C)
-    pass
 def debug():
     W=4900
     L=8000
@@ -22,7 +15,8 @@ def debug():
     strip_m  = rodar_albano_tamanhos(W,L,R,C,1.00)
     strip_g  = rodar_albano_tamanhos(W,L,R,C,1.06)
     strip_gg = rodar_albano_tamanhos(W,L,R,C,1.13)
-    print(f"P:{strip_p[1]},M:{strip_m[1]},G:{strip_g[1]},GG:{strip_gg[1]}")
+    print(f"P:{strip_p[1]}, M:{strip_m[1]}, G:{strip_g[1]}, GG:{strip_gg[1]}")
+    print(f"P:{strip_p[0]}, M:{strip_m[0]}, G:{strip_g[0]}, GG:{strip_gg[0]}")
     pass
 # ---------------------------------
 def rodar_modelo(W,L,R,C,T,q):
@@ -59,29 +53,6 @@ def rodar_albano_tamanhos(W,L,R,C,escalar):
     demanda_q = (1,1,2,2,2,2,1,1)
     return rodar_modelo(W,L,R,C,T_escalado,demanda_q)
 
-def rodar_modelo_albano(W,L,R,C):
-    T_albano = [
-            [(0,0), (966,56), (1983,-86), (2185,152), (2734,131), (3000,681), (2819,814), (2819,1274), (3000,1407), (2734,1957), (2185,1936), (1983,2174), (966,2032), (0,2088)],
-
-            [(0,0), (3034,0), (3034,261), (0,261)],
-
-            [(0,0), (1761,-173), (2183,477), (2183,837), (1761,1487), (0,1314)],
-
-            [(0,0), (796,119), (1592,0), (1666,125), (796,305), (-74,125)],
-
-            [(0,0), (411,65), (800,0), (1189,65), (1600,0), (1500,368), (800,286), (100,368)],
-
-            [(0,0), (936,0), (936,659), (0,659)],
-
-            [(0,0), (1010,70), (1835,-73), (2130,215), (2517,168), (2620,853), (2538,1293), (-56,1293)],
-
-            [(0,0), (2499,0), (2705,387), (2622,934), (2148,967), (1920,1152), (1061,1059), (0,1125)]
-            ]
-    
-    demanda_q = (1,1,2,2,2,2,1,1)
-    rodar_modelo(W,L,R,C, T_albano, demanda_q)
-    pass
-
 def rodar_modelo_hono(W,L,R,C):
     T = [
         [],
@@ -94,6 +65,5 @@ def rodar_modelo_hono(W,L,R,C):
 # ---------------------------------
 # Execução
 # ---------------------------------
-# main()
 debug()
 # ---------------------------------

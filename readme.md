@@ -3,10 +3,10 @@
 ## Problemas:
 - Ao salvar .difp o poligono não pode ter muitos vertices, pois o nome fica muito grande.
 - Arredondamento no NFP
--  
+- Tentar acelerar o BL
 
 ## Requisitos:
--
+- T: primeiro ponto deve ser (0,0), será a referência
 
 ## Termos:
 
