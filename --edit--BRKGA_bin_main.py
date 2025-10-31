@@ -8,10 +8,10 @@ import traceback
 import matplotlib.pyplot as plt
 
 # ========= PARAMETROS DO PROBLEMA =========
-ITEM_TYPES = {"P": 5206.04, "M": 5700.0, "G": 6396.04, "GG": 7716.65}
-n=1
-CAMISA_COUNTS = {"P": n*10, "M": n*10, "G": n*10, "GG": n*10}
-BIN_CAPACITY = 20000
+ITEM_TYPES = {"P": 1500, "M": 1550, "G": 1900, "GG": 2200}
+n=10
+CAMISA_COUNTS = {"P": n*10, "M": n*10, "G": n*10, "GG": n*7}
+BIN_CAPACITY = 5000.0
 
 # PARAMETROS DO ALG. GENÉTICO
 POP_SIZE = 100
@@ -71,7 +71,7 @@ def decode(individual):
 
 def fitness(individual):
     bins_usados, sobra = decode(individual)
-    return sobra
+    return bins_usados
 
 def biased_crossover(elite, non_elite, inherit_prob=INHERIT_PROB):
     # Crossover clássico gene a gene
@@ -205,7 +205,7 @@ def brkga_visual(pop_size, elite_frac, mutant_frac, inherit_prob):
             melhor_num_bins = num_bins
             efeito_frames = 20
 
-        if geracao % 10 == 0:
+        if geracao % 50 == 0:
             desenhar_bins_e_grafico(
                 bins, geracao, desperdicio, historico_desperdicio, max_desperdicio,
                 destaque=efeito_frames > 0,
@@ -283,113 +283,3 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 24)
 brkga_visual(POP_SIZE, ELITE_FRAC, MUTANT_FRAC, INHERIT_PROB)
 pygame.quit()
-
-# ============ TESTES DE PERFORMANCE =======================
-# import os
-# import csv
-# import time
-# import traceback
-# from datetime import datetime
-# import matplotlib.pyplot as plt
-
-# # Parâmetros de teste
-# num_repeticoes = 2                                                  # multiplicador do tempo computacional
-# print(f"Vamos rodar o problema {num_repeticoes}x. Estas serão as quantidades de gerações:")
-# # num_geracoes = [100,500,1000, 5000, 10000, 50000, 100000, 500000] # verificar a evolução das soluções (lento)
-# num_geracoes = [5000000]                                          # tentar achar um ótimo 
-# # num_geracoes = [10,100,1000]                                        # exemplo rápido
-# print(num_geracoes)
-
-# cores = ['royalblue', 'darkorange', 'seagreen', 'firebrick', 'purple']
-
-# resultados_individuais = []
-# resultados_medios = []
-# for n_geracoes in num_geracoes:
-#     tempos = []
-#     desperdicios = []
-
-#     print(f" == Rodando {n_geracoes} gerações, {num_repeticoes} vezes ==")
-#     for rep in range(num_repeticoes):
-#         print(f"  Execução {rep+1}/{num_repeticoes}...")
-#         inicio = time.time()
-#         num_bins, desperdicio, sequencia_camisas = brgka_simples(
-#             n_geracoes, POP_SIZE, ELITE_FRAC, MUTANT_FRAC, INHERIT_PROB
-#         )
-#         duracao = time.time() - inicio
-
-#         tempos.append(duracao)
-#         desperdicios.append(desperdicio)
-
-#         resultados_individuais.append((
-#             n_geracoes, duracao, desperdicio, rep + 1,
-#             num_bins, sequencia_camisas
-#         ))
-    
-#     tempo_medio = sum(tempos) / len(tempos)
-#     desperdicio_medio = sum(desperdicios) / len(desperdicios)
-#     resultados_medios.append((n_geracoes, tempo_medio, desperdicio_medio))
-
-# # ================== SALVAR COM TIMESTAMP =====================
-# output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brkga_resultados")
-# os.makedirs(output_dir, exist_ok=True)
-
-# timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-# csv_filename = os.path.join(output_dir, f"resultados_{timestamp}.csv")
-# png_filename = os.path.join(output_dir, f"grafico_{timestamp}.png")
-
-# try:
-#     with open(csv_filename, mode="w", newline='', encoding='utf-8') as file:
-#         writer = csv.writer(file)
-#         writer.writerow([
-#             "Geracoes", "Tempo_execucao_s", "Desperdicio_m", "Repeticao", "Num_Bins", "Melhor_Solucao"
-#         ])
-#         for linha in resultados_individuais:
-#             writer.writerow(linha)
-#     print(f"CSV salvo como: {csv_filename}")
-# except Exception:
-#     print("Erro ao salvar CSV:")
-#     traceback.print_exc()
-
-# # ================== PLOT =====================
-# plt.figure(figsize=(10, 6))
-# desps_individuais = [desp for (_, _, desp, _, _, _) in resultados_individuais]
-# desps_medios = [r[2] for r in resultados_medios]
-# desps_unicos = sorted(set(desps_individuais + desps_medios))
-
-# labels_usados = set()
-# for ger, tempo, desp, rep, num_bins, _ in resultados_individuais:
-#     label = f'{ger}g - rep {rep}'
-#     cor = cores[rep % len(cores)]
-#     if label not in labels_usados:
-#         plt.plot(tempo, desp, 'o', color=cor, label=label)
-#         labels_usados.add(label)
-#     else:
-#         plt.plot(tempo, desp, 'o', color=cor)
-
-#     # Mostra número de bins ao lado do ponto
-#     plt.annotate(f"{num_bins}", xy=(tempo, desp), xytext=(5, 0),
-#                  textcoords="offset points", ha='left', va='center', fontsize=8)
-
-# # Linha da média
-# tempos_medios = [r[1] for r in resultados_medios]
-# plt.plot(tempos_medios, desps_medios, '-o', color='black', linewidth=2, label='Média')
-
-# plt.yticks(desps_unicos, [f'{v:.2f}' for v in desps_unicos])
-# plt.title("BRKGA - Desperdício por Execução e Média")
-# plt.xlabel("Tempo de execução (s)")
-# plt.ylabel("Desperdício final (m)")
-# plt.grid(True)
-# plt.legend()
-# plt.tight_layout()
-
-# # Salvar imagem
-# try:
-#     plt.savefig(png_filename, dpi=300)
-#     print(f"Imagem salva como: {png_filename}")
-# except Exception:
-#     print("Erro ao salvar imagem:")
-#     traceback.print_exc()
-
-# plt.show()
-# print("programa finalizado corretamente.")
-# # input("Pressione ENTER para encerrar...")
