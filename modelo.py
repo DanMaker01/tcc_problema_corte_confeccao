@@ -744,8 +744,8 @@ class Modelo():
     def _iniciar_brkga_ordem(self):
         print("iniciando brgka-ordem")
         n = sum(self.q)
-        # brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=100,mutant_frac=0.3,seed=42)
-        brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=100,mutant_frac=0.3)
+        # brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=100,mutant_frac=0.4,seed=42)
+        brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=100,mutant_frac=0.4)
         brkga_resultado = brkga_ordem.evolve(self.q, generations=3)
         best_sequence, best_fitness = brkga_resultado
 

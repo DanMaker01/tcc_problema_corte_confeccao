@@ -27,10 +27,10 @@ class Bottom_Left():
                 NFP_tr_discreto = self._discretizar_poligono(NFP_tr,self.M,S,somente_interior=True)
                 S = self._remover_pontos(S,NFP_tr_discreto)
                 if len(S)<1:
-                    print(f"após NFP_{u}_{t}, a peça {t} não coube. refine a malha ou aumente as dimensões.")
+                    print(f"após NFP_{u}_{t}, a peça {t} não coube. refine a malha ou aumente as dimensões.",end="")
                     return []               # já mata?
             if len(S)<1:
-                print(f"nao sobraram pontos para posicionar peça {t}. refine a malha ou aumente as dimensões")
+                print(f"RARO: nao sobraram pontos para posicionar peça {t}. refine a malha ou aumente as dimensões")
                 return []                   # já mata?
             else:
                 vertice = self._escolhe_bottom_left(S)

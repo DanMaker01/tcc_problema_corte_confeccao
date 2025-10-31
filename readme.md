@@ -1,5 +1,13 @@
 # O Problema do Corte de Tecido
 
+## Problemas:
+- Ao salvar .difp o poligono não pode ter muitos vertices, pois o nome fica muito grande.
+- Arredondamento no NFP
+-  
+
+## Requisitos:
+-
+
 ## Termos:
 
 - Faixa de tecido: Trecho de tecido de altura fixa e largura variável.
@@ -65,7 +73,7 @@ Dado as larguras das camisas
 T
 
 
-### Modelo
+### Modelo 
 Parametros: W,L,R,C,T,q
 
 Carregar:

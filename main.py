@@ -18,8 +18,8 @@ def debug():
     L=8000
     R=50
     C=401
-    rodar_modelo_albano(W,L,R,C)
-    rodar_modelo_albano_tamanhos(W,L,R,C,1.3)
+    # rodar_modelo_albano(W,L,R,C)
+    rodar_modelo_albano_tamanhos(W,L,R,C,1.1)
     pass
 # ---------------------------------
 def rodar_modelo(W,L,R,C,T,q):
@@ -51,7 +51,7 @@ def rodar_modelo_albano_tamanhos(W,L,R,C,escalar):
             ]
     T_escalado = []
     for poligono in T_albano:
-        poligono_escalado = [(x*escalar,y*escalar) for x,y in poligono]
+        poligono_escalado = [(round(x*escalar,7),round(y*escalar,7)) for x,y in poligono]
         T_escalado.append(poligono_escalado)
     demanda_q = (1,1,2,2,2,2,1,1)
     return rodar_modelo(W,L,R,C,T_escalado,demanda_q)

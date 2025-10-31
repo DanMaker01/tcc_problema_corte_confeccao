@@ -1,6 +1,8 @@
+# ---------------------------------------------------------------------------------
 import numpy as np
 import random
 from typing import List, Tuple, Callable
+# ---------------------------------------------------------------------------------
 
 class BRKGA_ordem:
     def __init__(self, n: int, fitness_func: Callable, pop_size: int = 100, 
@@ -129,3 +131,11 @@ class BRKGA_ordem:
 
         fitness = self.fitness_func(sequence)
         return sequence, fitness
+
+# ---------------------------------------------------------------------------------
+
+class BRKGA_bin:
+    def __init__(self):
+        pass
+
+# ---------------------------------------------------------------------------------
