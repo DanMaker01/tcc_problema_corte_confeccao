@@ -28,7 +28,7 @@ class Modelo():
             print("problema ao iniciar modelo, revise seus parâmetros.")
             return
         # senao:
-        self.malha:Malha = Malha(W,L,R,C)   # gera ao criar a classe
+        self.malha:Malha = Malha(W,L,R,C)   # gera ao criar a classe, rápido
         self.NFP : dict[int,int] = None     # NFP(u,t) = poligono
         # self.IFP = None                     # IFP(t) = poligono
         self.DIFP:list = None                    # DIFP(t,M) = subconjunto de M
@@ -41,11 +41,10 @@ class Modelo():
 
     def rodar(self):
         print("rodando modelo.")
-        self._pre_processamento()           # carrega na memória: IFP Discreto.
-        self._iniciar_brkga_ordem()         # roda o BRKGA de ordem, acha a melhor ordem
-        # self.
-        print("finalizando modelo.")
-        pass
+        self._pre_processamento()                       # carrega na memória: IFP Discreto.
+        brkga_resultado = self._iniciar_brkga_ordem()   # roda o BRKGA de ordem, acha a melhor ordem
+        
+        return brkga_resultado
     
     # --------------------------------------------------------------------------------
     def _verificar_requisitos_para_modelo(self,W,L,R,C,T,q):
@@ -621,7 +620,7 @@ class Modelo():
         str_malha = self._transformar_malha_em_str(malha)
         for i,t in enumerate(T):
             str_t = self._transformar_poligono_em_str(t)
-            difp_t = self._carregar_arquivo(f"{str_malha}\{str_t}.difp")
+            difp_t = self._carregar_arquivo(f"{str_malha}/{str_t}.difp")
             if difp_t == []:
                 return None                 # se nao conseguiu abrir arquivo, sai.
             else:
@@ -757,6 +756,6 @@ class Modelo():
 
         self._plotar_resultado(self.malha,bl_resultado_pontos,best_sequence, f"Menor faixa que contém os poligonos: {best_fitness}")
         
-        pass
+        return brkga_resultado
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

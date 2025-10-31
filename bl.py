@@ -27,10 +27,10 @@ class Bottom_Left():
                 NFP_tr_discreto = self._discretizar_poligono(NFP_tr,self.M,S,somente_interior=True)
                 S = self._remover_pontos(S,NFP_tr_discreto)
                 if len(S)<1:
-                    print(f"erro de NFP_{u}_{t}. não coube na malha.")
+                    print(f"após NFP_{u}_{t}, a peça {t} não coube. refine a malha ou aumente as dimensões.")
                     return []               # já mata?
             if len(S)<1:
-                print(f"nao sobraram pontos para posicionar peça {i}. refine a malha ou aumente as dimensões")
+                print(f"nao sobraram pontos para posicionar peça {t}. refine a malha ou aumente as dimensões")
                 return []                   # já mata?
             else:
                 vertice = self._escolhe_bottom_left(S)
@@ -75,14 +75,12 @@ class Bottom_Left():
 
     def _escolhe_bottom_left(self,S):
         '''
-        conjunto de pontos S = {d0,d1,...,dN}
+        conjunto de pontos S = {(x,y),(x,y),...,(x,y)}
         '''
         if len(S) == 0:
             print("erro, não tem onde colocar.")
         else:
-            # print(S)
-            # return sorted(S)[0]
-            return S[0] ##### não precisa nem ordenar
+            return S[0] # não precisa nem ordenar
     def _transladar_poligono(self,poligono:Polygon, translacao: tuple) -> Polygon:        
         dx, dy = translacao
         return Polygon([(x + dx, y + dy) for x, y in poligono.exterior.coords])
