@@ -8,16 +8,16 @@ import traceback
 import matplotlib.pyplot as plt
 
 # ========= PARAMETROS DO PROBLEMA =========
-ITEM_TYPES = {"P": 1500, "M": 1550, "G": 1900, "GG": 2200}
+ITEM_TYPES = {"P": 5006.04, "M": 5720, "G": 6493.98, "GG": 7550}
 n=10
 CAMISA_COUNTS = {"P": n*10, "M": n*10, "G": n*10, "GG": n*7}
-BIN_CAPACITY = 5000.0
+BIN_CAPACITY = 20000.0
 
 # PARAMETROS DO ALG. GENÉTICO
 POP_SIZE = 100
 ELITE_FRAC = 0.2
 MUTANT_FRAC = 0.4
-INHERIT_PROB = 0.5
+INHERIT_PROB = 0.6
 
 # PARAMETROS DE INTERFACE GRÁFICA
 CORES = {"P": (255, 100, 100), "M": (100, 255, 100), "G": (100, 100, 255), "GG": (240, 240, 50)}
@@ -71,7 +71,7 @@ def decode(individual):
 
 def fitness(individual):
     bins_usados, sobra = decode(individual)
-    return bins_usados
+    return sobra
 
 def biased_crossover(elite, non_elite, inherit_prob=INHERIT_PROB):
     # Crossover clássico gene a gene

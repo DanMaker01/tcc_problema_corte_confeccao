@@ -724,7 +724,7 @@ class Modelo():
 
     def _rodar_BL(self,seq) -> float:   ### implementar
         largura_ja_existente = self.sequencias_resolvidas.get(tuple(seq))   #ve se já foi resolvido antes
-        print(f"rodando BL para sequencia: {seq} -> ",end="")
+        print(f"rodando BL seq: {seq} --> ",end="")
         if largura_ja_existente != None:
             print("Já foi calculada. largura =",largura_ja_existente)
             return largura_ja_existente

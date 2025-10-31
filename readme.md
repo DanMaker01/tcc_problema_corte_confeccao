@@ -2,72 +2,47 @@
 
 ## Problemas:
 - Ao salvar .difp o poligono não pode ter muitos vertices, pois o nome fica muito grande.
-- Arredondamento no NFP
+- Arredondamento numérico no NFP, para NFP complicados
 - Tentar acelerar o BL
-
-## Requisitos:
-- T: primeiro ponto deve ser (0,0), será a referência
+- Tentar acelerar os BRKGA
 
 ## Termos:
-
 - Faixa de tecido: Trecho de tecido de altura fixa e largura variável.
 - Bin: Retangulo de tecido com altura e largura fixas, de onde serão cortados os Produtos finais.
 - Produto final: Conjunto de Itens, que devem ser cortados juntos.
 - Item: Peça poligonal que compõe um Produto final.
 
-## Objetos:
-
-### Malha
-- W,L
-- R,C
-- gx(), gy()
-- D()
-- n_to_coord(), coord_to_n()
-
-### Poligono
-- pontos            #(o primeiro ponto é chamado de Referência e *precisa ser (0,0)*)
-- bounding_box() 
-
-### Modelo (Heuristica? Meta-heuristica?)
-- debug_visualizacao
-- 
-
-### BRKGA-Ordem
-- code()
-- decode()
-- fitness()
-
-### BL
-- 
-
-### BRKGA-Bins
-- code()
-- decode()
-- fitness()
-
-
-
 ## Pseudo-códigos:
+### BRKGA p/ menor faixa
+```python
+# exemplo
+for i in range(10):
+    print(i)
+```
 
-
-### BRKGA
-Dado a quantidade da demanda, e qtd da população 
-gera uma população de vetores do tamanho da demanda, de componentes entre [0,1]
-Ordena pelos componentes.
-manda evoluir
 
 
 ### BL
-Dada a Malha, IFP, NFP e fila de Demanda.
-Para cada peça p do tipo t da Demanda,
+Dada a Malha, IFP-Discreto, NFP e fila de Demanda.
+Para cada peça p do tipo t na Demanda:
 - S = IFP_t
 - Para cada peça r do tipo u já posicionada,
 - - S = S - NFP_r,p
 - Escolhe o ponto BL.
+```python
+# exemplo
+for i in range(10):
+    print(i)
+```
 
 
-### BRKGA
+### BRKGA p/ bin
 Dado as larguras das camisas
+```python
+# exemplo
+for i in range(10):
+    print(i)
+```
 
 ### Memória Persistente
 T

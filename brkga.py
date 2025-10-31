@@ -134,8 +134,40 @@ class BRKGA_ordem:
 
 # ---------------------------------------------------------------------------------
 
-class BRKGA_bin:
-    def __init__(self):
-        pass
+class BRKGA_bin:        ######## BRGKA bin
+    def __init__(self,n, pop_size=100, elite_frac = 0.2, mutant_frac = 0.3,prob_heranca=0.7,seed=None ):
+        if seed is not None:
+            np.random.seed(seed)
+            random.seed(seed)
+        
+        self.n = n
+        self.pop_size = pop_size
+        self.prob_heranca = prob_heranca
 
+        self.elite_size = int(pop_size*elite_frac)
+        self.mutant_size = int(pop_size*mutant_frac)
+        self.offspring_size = pop_size - self.elite_size - self.mutant_size
+        self.population = np.random.random((pop_size, n)).astype(float)
+
+        pass
+    def random_individual(self, demanda_dict:dict):
+        tamanho = sum(demanda_dict.values())
+        return [random.random() for _ in range(tamanho)]
+    def decode(self,individual):
+        pass
+    def fitness(self,individual):           ## fitness aqui? ou recebe uma função externa?
+        pass
+    def biased_crossover(self):
+        pass
+    def evolve(self, num_geracoes=100):
+        melhor_indiv = None
+        melhor_fitness = float("inf")
+
+        for gen in range(num_geracoes):
+            #avaliar popula
+            #comparar e achar melhor fitness
+            #nova popula
+            pass
+
+        pass
 # ---------------------------------------------------------------------------------
