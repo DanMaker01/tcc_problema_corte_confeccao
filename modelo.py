@@ -13,7 +13,6 @@ from shapely.geometry import Polygon, Point
 from shapely.prepared import prep
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import numpy as np
 
 import ifp_generator
 import nfp_generator
