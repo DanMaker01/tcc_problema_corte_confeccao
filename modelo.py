@@ -332,7 +332,7 @@ class Modelo():
             
             # Adiciona informações detalhadas
             info_text = f"""Malha: {malha.W} × {malha.L}
-    Resolução: {malha.C} × {malha.R}
+    Resolução: {malha.R} × {malha.C}
     Itens posicionados: {total_itens}
     Tipos utilizados: {len(tipos_utilizados)}
     Área utilizada: {area_utilizada:.1f} ({utilizacao:.1f}%)
@@ -646,7 +646,7 @@ class Modelo():
             difp_t = self._discretizar_poligono(ifp_t,malha,pontos_malha,somente_interior=False)
             DIFP.append(difp_t)
             # self._plotar_pontos(malha,difp_t,f"IFP_{t} calculado.")
-            print("calculou IFP-Discreto dos poligonos em T.")
+        print("calculou IFP-Discreto dos poligonos em T.")
         return DIFP
     def _gerar_ifp_poligono(self,malha, t:list) -> Polygon:
         retangulo_polygon = Polygon([(0,0),(malha.L,0),(malha.L,malha.W),(0,malha.W)])
@@ -727,7 +727,7 @@ class Modelo():
         largura_ja_existente = self.sequencias_resolvidas.get(tuple(seq))   #ve se já foi resolvido antes
         print(f"rodando BL para sequencia: {seq} -> ",end="")
         if largura_ja_existente != None:
-            print("Sequencia já foi calculada. largura =",largura_ja_existente)
+            print("Já foi calculada. largura =",largura_ja_existente)
             return largura_ja_existente
         else:                
             M = self.malha
@@ -742,7 +742,6 @@ class Modelo():
             self.sequencias_resolvidas[tuple(seq)]=largura_resultado    #
             return largura_resultado
     # --------------------------------------------------------------------------------
-
     def _iniciar_brkga_ordem(self):
         print("iniciando brgka-ordem")
         n = sum(self.q)
@@ -759,7 +758,5 @@ class Modelo():
         self._plotar_resultado(self.malha,bl_resultado_pontos,best_sequence, f"Menor faixa que contém os poligonos: {best_fitness}")
         
         pass
-
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
