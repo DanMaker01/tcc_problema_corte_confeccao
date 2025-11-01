@@ -21,7 +21,6 @@ for i in range(10):
 ```
 
 
-
 ### BL
 Dada a Malha, IFP-Discreto, NFP e fila de Demanda.
 Para cada peça p do tipo t na Demanda:

@@ -17,6 +17,9 @@ def debug():
     strip_gg = rodar_albano_tamanhos(W,L,R,C,1.13)
     print(f"P:{strip_p[1]}, M:{strip_m[1]}, G:{strip_g[1]}, GG:{strip_gg[1]}")
     print(f"P:{strip_p[0]}, M:{strip_m[0]}, G:{strip_g[0]}, GG:{strip_gg[0]}")
+
+    
+
     pass
 # ---------------------------------
 def rodar_modelo(W,L,R,C,T,q):

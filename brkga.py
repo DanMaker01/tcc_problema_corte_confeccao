@@ -159,15 +159,28 @@ class BRKGA_bin:        ######## BRGKA bin
         pass
     def biased_crossover(self):
         pass
-    def evolve(self, num_geracoes=100):
+    def evolve(self, num_geracoes=100):     ##### implementar
         melhor_indiv = None
         melhor_fitness = float("inf")
 
         for gen in range(num_geracoes):
             #avaliar popula
-            #comparar e achar melhor fitness
-            #nova popula
-            pass
+            pop_fitness = [self.fitness(indiv) for indiv in self.population]
+            pop_fitness.sort(key=lambda x: x[0])
 
-        pass
+            #comparar e achar melhor fitness
+            desperdicio_atual, melhor_atual = pop_fitness[0]
+            if melhor_atual < melhor_fitness:
+                melhor_indiv = melhor_atual
+             
+            #nova popula ########## implementar
+            # nova_pop = [ind for ]
+            # self.population = nova_pop
+
+        bins, desperdicio_final = self.decode(melhor_indiv)########## implementar
+        num_bins = len(bins)
+        sequencia_de_corte = [ [tipo for _, tipo, _ in bin] for bin in bins]
+
+        return num_bins, desperdicio_final, sequencia_de_corte
+
 # ---------------------------------------------------------------------------------

@@ -8,10 +8,10 @@ import traceback
 import matplotlib.pyplot as plt
 
 # ========= PARAMETROS DO PROBLEMA =========
-ITEM_TYPES = {"P": 5006.04, "M": 5720, "G": 6493.98, "GG": 7550}
+ITEM_TYPES = {"PP":3000.0,"P": 5006.04, "M": 5720, "G": 6493.98, "GG": 7550}
 n=10
-CAMISA_COUNTS = {"P": n*10, "M": n*10, "G": n*10, "GG": n*7}
-BIN_CAPACITY = 20000.0
+CAMISA_COUNTS = {"PP":n*4,"P": n*2, "M": n*3, "G": n*2, "GG": n*1}
+BIN_CAPACITY = 24000.0
 
 # PARAMETROS DO ALG. GENÉTICO
 POP_SIZE = 100
@@ -20,7 +20,7 @@ MUTANT_FRAC = 0.4
 INHERIT_PROB = 0.6
 
 # PARAMETROS DE INTERFACE GRÁFICA
-CORES = {"P": (255, 100, 100), "M": (100, 255, 100), "G": (100, 100, 255), "GG": (240, 240, 50)}
+CORES = {"PP": (100, 255, 255),"P": (255, 100, 100), "M": (100, 255, 100), "G": (100, 100, 255), "GG": (240, 240, 50)}
 LARGURA_TELA, ALTURA_TELA = 1200, 700
 BG = (30, 30, 30)
 BRANCO = (255, 255, 255)
