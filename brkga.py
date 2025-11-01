@@ -134,7 +134,7 @@ class BRKGA_ordem:
 
 # ---------------------------------------------------------------------------------
 
-class BRKGA_bin:        ######## BRGKA bin
+class BRKGA_bin:            ######## BRGKA bin, implementar com itens_types genéricos
     def __init__(self,n, pop_size=100, elite_frac = 0.2, mutant_frac = 0.3,prob_heranca=0.7,seed=None ):
         if seed is not None:
             np.random.seed(seed)
