@@ -42,7 +42,7 @@ class Modelo():
     def rodar(self):
         print("rodando modelo.")
         self._pre_processamento()                       # carrega na memória: IFP Discreto.
-        brkga_resultado = self._iniciar_brkga_ordem()   # roda o BRKGA de ordem, acha a melhor ordem
+        brkga_resultado = self._iniciar_brkga_ordem(100,0.3,0.4,4)   # roda o BRKGA de ordem, acha a melhor ordem
         
         return brkga_resultado
     
@@ -666,6 +666,8 @@ class Modelo():
             print("não achou DIFP, calculando todos DIFP e salvando.")                               #se nao achou, gera e salva.
             DIFP = self._calcular_todos_DIFP(self.T, self.malha)
             self._salvar_todos_DIFP(self.T,self.malha, DIFP)
+            print("os DIFP foram gerados.")
+        print("os DIFP foram carregados na memória.")
         self.DIFP = DIFP        # atribui os valores carregados ou gerados.  
 
         # NFP gera na hora, é rápido.
@@ -713,7 +715,7 @@ class Modelo():
                     if x_max_atual > max_x:
                         max_x = x_max_atual
             
-            return max_x
+            return round(max_x,10) 
             
         except Exception as e:
             print(f"Erro ao medir largura da faixa BL: {e}")
@@ -741,12 +743,12 @@ class Modelo():
             self.sequencias_resolvidas[tuple(seq)]=largura_resultado    #
             return largura_resultado
     # --------------------------------------------------------------------------------
-    def _iniciar_brkga_ordem(self):
+    def _iniciar_brkga_ordem(self, pop_size=100,elite_frac=0.3,mutant_frac=0.4, generations=10):
         print("iniciando brgka-ordem")
         n = sum(self.q)
         # brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=100,mutant_frac=0.4,seed=42)
-        brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=100,mutant_frac=0.4)
-        brkga_resultado = brkga_ordem.evolve(self.q, generations=3)
+        brkga_ordem = BRKGA_ordem(n, self._rodar_BL,pop_size=pop_size,mutant_frac=mutant_frac,elite_frac=elite_frac)
+        brkga_resultado = brkga_ordem.evolve(self.q, generations=generations)
         best_sequence, best_fitness = brkga_resultado
 
         # roda um bl pra montar a solução pra melhor sequencia achada.
@@ -754,7 +756,8 @@ class Modelo():
         bl_resultado = bl.rodar()
         bl_resultado_pontos = [item[1] for item in bl_resultado]
 
-        self._plotar_resultado(self.malha,bl_resultado_pontos,best_sequence, f"Menor faixa que contém os poligonos: {best_fitness}")
+        W,L,R,C = self.malha.W,self.malha.L,self.malha.R,self.malha.C
+        self._plotar_resultado(self.malha,bl_resultado_pontos,best_sequence, f"Menor faixa que contém os poligonos: {best_fitness},W:{W},L:{L},R:{R},C:{C}")
         
         return brkga_resultado
 # ---------------------------------------------------------------------------

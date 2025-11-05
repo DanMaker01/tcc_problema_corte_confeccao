@@ -1,4 +1,4 @@
-# O Problema do Corte de Tecido
+# O Problema do Corte de Tecido em Confecções de Roupas
 
 ## Problemas:
 - Ao salvar .difp o poligono não pode ter muitos vertices, pois o nome fica muito grande.
@@ -7,7 +7,7 @@
 - Tentar acelerar os BRKGA
 
 ## Termos:
-- Faixa de tecido: Trecho de tecido de altura fixa e largura variável.
+- Faixa de tecido: Trecho de tecido de altura fixa e largura variável. (qual queremos minimizar)
 - Bin: Retangulo de tecido com altura e largura fixas, de onde serão cortados os Produtos finais.
 - Produto final: Conjunto de Itens, que devem ser cortados juntos.
 - Item: Peça poligonal que compõe um Produto final.
@@ -47,7 +47,13 @@ for i in range(10):
 T
 
 
-### Modelo 
+## Modelo 
+
+1) Achar Menor Faixa para cada Produto Final.
+
+2) Achar Mínimo de Bins em que caibam todos as Faixas.
+
+
 Parametros: W,L,R,C,T,q
 
 Carregar:
