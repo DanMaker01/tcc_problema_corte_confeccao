@@ -14,12 +14,12 @@ class Bottom_Left():
         self.seq_demanda = seq                      # seq = [0,0,1,1,2,2,2,2,3,3,4]
         pass
 
-    def rodar(self):
+    def rodar(self,verbose = False):
         pecas_posicionadas = []                     # pecas = [(t,(x,y)), (t,(x,y)), ...]
         for i,t in enumerate(self.seq_demanda):
             S = self.DIFP[t]
             if len(S)<1:
-                print("erro de IFP, refine a manhã ou aumente as dimensões")
+                print("erro de IFP, refine a manhã ou aumente as dimensões")    # quebrar código?
             for r in pecas_posicionadas:
                 u,vertice = r
                 translacao = vertice
@@ -27,15 +27,17 @@ class Bottom_Left():
                 NFP_tr_discreto = self._discretizar_poligono(NFP_tr,self.M,S,somente_interior=True)
                 S = self._remover_pontos(S,NFP_tr_discreto)
                 if len(S)<1:
-                    print(f"após NFP_{u}_{t}, a peça {t} não coube. refine a malha ou aumente as dimensões.",end="")
+                    if verbose:
+                        print(f"após NFP_{u}_{t}, a peça {t} não coube. refine a malha ou aumente as dimensões.",end="")
                     return []               # já mata?
             if len(S)<1:
-                print(f"RARO: nao sobraram pontos para posicionar peça {t}. refine a malha ou aumente as dimensões")
+                if verbose:
+                    print(f"RARO: nao sobraram pontos para posicionar peça {t}. refine a malha ou aumente as dimensões")
                 return []                   # já mata?
             else:
-                vertice = self._escolhe_bottom_left(S)
+                vertice = self._escolhe_bottom_left(S)      # ganancioso, escolhe a primeira posição, pois já está ordenado
                 pecas_posicionadas.append((t,vertice))
-        return pecas_posicionadas
+        return pecas_posicionadas                           # lista de elementos (t,(x,y))
     
     def _discretizar_poligono(self, poligono:Polygon, malha:Malha, pontos_a_verificar:list[Tuple],
                               somente_interior:bool=False, epsilon :float = 1e-6):

@@ -114,6 +114,13 @@ def calculate_ifp(container_rectangle: Polygon, piece_polygon: Polygon) -> Polyg
     """
     Versão simplificada do IFP para comparação - baseada apenas na bounding box.
     """
+    
+    # Converter para Polygon se forem listas de pontos
+    if not isinstance(piece_polygon, Polygon):
+        piece_polygon = Polygon(piece_polygon)
+    
+    if not isinstance(container_rectangle, Polygon):
+        container_rectangle = Polygon(container_rectangle)
     # Extrair largura e altura do container
     min_x, min_y, max_x, max_y = container_rectangle.bounds
     container_width = max_x - min_x
