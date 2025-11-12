@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import traceback
+import time
 # ---------------------------------------------------------------------------------
 
 class Modelo:
@@ -41,14 +42,18 @@ class Modelo:
             inst:Instancia
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
+                t0 = time.time()
                 seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP)
+                print(f"ISPP demorou {time.time()-t0} seg.")
                 inst.l = larg
                 self._salvar_json_instancia(modelo_str,inst)                        
                 self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False)
         # agora todos modelos tem sua largura.
         
         # BPP
+        t0=time.time()
         num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        print(f"BPP demorou {time.time()-t0} seg.")
         # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         nome_instancias_bpp = ""
         str_Q = "Q"
@@ -56,7 +61,6 @@ class Modelo:
             nome_instancias_bpp += modelo_str+"_"
             str_Q += f"_{str(inst.Q)}"
         nome_instancias_bpp += str_Q
-
         self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_instancias_bpp)
         self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp)
         # Finaliza
