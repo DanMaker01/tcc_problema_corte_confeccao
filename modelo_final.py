@@ -423,7 +423,7 @@ class Modelo:
                                         edgecolor=cor,
                                         facecolor=cor,
                                         alpha=0.7,
-                                        linewidth=1.5,
+                                        linewidth=1.0,
                                         label=label)
                     ax.add_patch(patch)
                     
@@ -497,7 +497,7 @@ class Modelo:
             # ADIÇÃO: Linha vertical pontilhada mostrando a área horizontal utilizada
             if comprimento_utilizado > 0:
                 ax.axvline(x=comprimento_utilizado, color='red', linestyle='--', 
-                          linewidth=2.5, alpha=0.9, 
+                          linewidth=1.5, alpha=0.9, 
                           label=f'Comprimento utilizado: {comprimento_utilizado:.1f}')
             
             # Configurações do gráfico
@@ -517,17 +517,17 @@ class Modelo:
             area_total = W * L
             # utilizacao = (area_utilizada / area_total) * 100 if area_total > 0 else 0
             
-            # Adiciona informações detalhadas
-            info_text = f"""Malha: {W} × {L}
-    Resolução: {R} × {C}
-    Itens posicionados: {total_itens}
-    Tipos utilizados: {len(tipos_utilizados)}
-    Comprimento utilizado: {comprimento_utilizado:.1f}
-    Pontos DIFP: {len(pontos) if pontos else 0}"""
+    #         # Adiciona informações detalhadas
+    #         info_text = f"""Malha: {W} × {L}
+    # Resolução: {R} × {C}
+    # Itens posicionados: {total_itens}
+    # Tipos utilizados: {len(tipos_utilizados)}
+    # Comprimento utilizado: {comprimento_utilizado:.1f}
+    # Pontos DIFP: {len(pontos) if pontos else 0}"""
             
-            ax.text(0.02, 0.98, info_text, transform=ax.transAxes, verticalalignment='top',
-                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.9),
-                fontsize=10, fontfamily='monospace')
+    #         ax.text(0.02, 0.98, info_text, transform=ax.transAxes, verticalalignment='top',
+    #             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.9),
+    #             fontsize=10, fontfamily='monospace')
             
             # Salva o gráfico se solicitado
             if salvar_arquivo:
