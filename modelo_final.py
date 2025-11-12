@@ -48,7 +48,8 @@ class Modelo:
         # agora todos modelos tem sua largura.
         
         # BPP
-        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         nome_instancias_bpp = ""
         str_Q = "Q"
         for modelo_str, inst in self.modelos_roupas.items():
@@ -420,16 +421,16 @@ class Modelo:
                     # Plota o polígono posicionado
                     patch = patches.Polygon(list(zip(x, y)), 
                                         closed=True, 
-                                        edgecolor=cor,
+                                        edgecolor=cor, 
                                         facecolor=cor,
                                         alpha=0.7,
                                         linewidth=1.0,
                                         label=label)
                     ax.add_patch(patch)
                     
-                    # Marca o ponto de posicionamento (referência)
-                    ax.scatter([posicao[0]], [posicao[1]], 
-                            color='black', s=40, zorder=10, marker='x', linewidth=2)
+                    # # Marca o ponto de posicionamento (referência)
+                    # ax.scatter([posicao[0]], [posicao[1]], 
+                    #         color='black', s=40, zorder=10, marker='x', linewidth=2)
                     
                     # Adiciona número da sequência no centroide do polígono
                     if mostrar_numeros:
@@ -447,7 +448,7 @@ class Modelo:
                             bbox=dict(boxstyle='circle', facecolor='white', alpha=0.9),
                             zorder=15)
             
-            # Plota os pontos DIFP disponíveis em fundo (opcional)
+            # Plota os pontos DIFP disponíveis em fundo (opcional) #####retirar
             if mostrar_pontos_difp and pontos:
                 x_vals = [p[0] for p in pontos]
                 y_vals = [p[1] for p in pontos]
@@ -494,7 +495,7 @@ class Modelo:
                     if comprimento_total > comprimento_utilizado:
                         comprimento_utilizado = comprimento_total
             
-            # ADIÇÃO: Linha vertical pontilhada mostrando a área horizontal utilizada
+            # Linha vertical pontilhada para mostrar a largura
             if comprimento_utilizado > 0:
                 ax.axvline(x=comprimento_utilizado, color='red', linestyle='--', 
                           linewidth=1.5, alpha=0.9, 
@@ -511,11 +512,11 @@ class Modelo:
             by_label = dict(zip(labels, handles))
             ax.legend(by_label.values(), by_label.keys(), loc='upper right', fontsize=9)
             
-            # Calcula estatísticas
-            total_itens = len(seq)
-            area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
-            area_total = W * L
-            # utilizacao = (area_utilizada / area_total) * 100 if area_total > 0 else 0
+            # # Calcula estatísticas
+            # total_itens = len(seq)
+            # area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
+            # area_total = W * L
+            # # utilizacao = (area_utilizada / area_total) * 100 if area_total > 0 else 0
             
     #         # Adiciona informações detalhadas
     #         info_text = f"""Malha: {W} × {L}
