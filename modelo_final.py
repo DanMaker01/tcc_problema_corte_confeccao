@@ -510,43 +510,48 @@ class Modelo:
             ax.set_ylabel('Largura (W)')
             ax.set_title(titulo, fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.2)
-            
+
             # Remove legendas duplicadas e organiza a legenda
             handles, labels = ax.get_legend_handles_labels()
             by_label = dict(zip(labels, handles))
             ax.legend(by_label.values(), by_label.keys(), loc='upper right', fontsize=9)
-            
-            # # Calcula estatísticas
-            # total_itens = len(seq)
-            # area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
-            # area_total = W * L
-            # # utilizacao = (area_utilizada / area_total) * 100 if area_total > 0 else 0
-            
-    #         # Adiciona informações detalhadas
-    #         info_text = f"""Malha: {W} × {L}
-    # Resolução: {R} × {C}
-    # Itens posicionados: {total_itens}
-    # Tipos utilizados: {len(tipos_utilizados)}
-    # Comprimento utilizado: {comprimento_utilizado:.1f}
-    # Pontos DIFP: {len(pontos) if pontos else 0}"""
-            
-    #         ax.text(0.02, 0.98, info_text, transform=ax.transAxes, verticalalignment='top',
-    #             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.9),
-    #             fontsize=10, fontfamily='monospace')
-            
+
+            # Calcula estatísticas
+            total_itens = len(seq)
+            area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
+            area_total = W * L
+
+            # Texto informativo (sem bbox)
+            info_text = (
+                f"Malha: {W} × {L}   |   "
+                f"Resolução: {R} × {C}   |   "
+                f"Itens: {total_itens}   |   "
+                f"Tipos: {len(tipos_utilizados)}   |   "
+                f"Comprimento utilizado: {comprimento_utilizado:.1f}   |   "
+                f"Pontos DIFP: {len(pontos) if pontos else 0}"
+            )
+
+            # Adiciona as informações logo abaixo do título
+            ax.text(
+                0.5, 1.02, info_text,
+                transform=ax.transAxes,
+                ha='center', va='bottom',
+                fontsize=10, color='dimgray',
+            )
+
             # Salva o gráfico se solicitado
             if salvar_arquivo:
                 pasta = "instancias"
                 if not os.path.exists(pasta):
                     os.makedirs(pasta)
-                caminho_completo = pasta+"/"+salvar_arquivo
+                caminho_completo = pasta + "/" + salvar_arquivo
                 plt.savefig(caminho_completo, dpi=300, bbox_inches='tight')
                 print(f"Gráfico do ISPP salvo em: {caminho_completo}")
+
             if mostrar_plot:
                 plt.tight_layout()
                 plt.show()
-                
-            
+
             return fig, ax
             
         except Exception as e:
