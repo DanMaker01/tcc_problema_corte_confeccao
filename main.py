@@ -43,7 +43,7 @@ def main():
     C=76
     # BPP
     modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
-    Q = [2, 2, 4, 4, 2]
+    Q = [1, 1, 1, 1, 1]
     # modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
     # Q = [1, 1, 1, 1, 1]
     largura_bin = 110

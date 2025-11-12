@@ -51,12 +51,9 @@ class BRKGA_ordem:
             sequence_indexes = self.decode(chrom)
             sequence = [demanda_sequenciada[i] for i in sequence_indexes]
             fitness,pecas_posicionadas = self.fitness_func(sequence)   #roda o BL em si
-            if i % 10 == 0:
-                print(f"{i+1}/{total} fit:{fitness} seq:{sequence} pecas_pos:{str(pecas_posicionadas)}")
-            # if ii in [2,4,8,16,32,64,100]:
-            #     print(f"{ii}/{total}\tseq:{sequence}\tlargura:{fitness}")
-
-            # ii+=1
+            # if i % 10 == 0:
+            #     print(f"{i+1}/{total} fit:{fitness} seq:{sequence} pecas_pos:{str(pecas_posicionadas)}")
+            
             # Penaliza fitness inválidos em vez de reinicializar tudo
             if not np.isfinite(fitness):
                 fitness = 1e9
