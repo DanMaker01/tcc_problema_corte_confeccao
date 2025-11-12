@@ -1,8 +1,8 @@
 # ---------------------------------------------------------------------------------
 import ifp_generator 
 import nfp_generator 
-from modelo_ISPP import Modelo_ISPP
-from modelo_BPP import Modelo_BPP
+from modelo_ISPP import *
+from modelo_BPP import *
 import json
 import os
 from datetime import datetime
@@ -26,11 +26,93 @@ class Modelo:
         inst = Instancia(poligonos_T,demanda_itens_q,W,L,R,C,demanda_produto_Q,largura_l,IFP,NFP)
         self.modelos_roupas[str_modelo]= inst
         # self._salvar_instancia(str_modelo,inst)
-    def editar_modelo_roupa_Q(self,str_modelo , Q:int):
-        inst = self.modelos_roupas[str_modelo]
-        inst.Q = Q
     def _limpar_modelos_roupa(self):
         self.modelos_roupas.clear()
+    def adicionar_modelo_demanda_Q(self,str_modelo, demanda_Q):     ######implementar
+        pass
+    # -----------------------------------------------------------------
+    def rodar(self, largura_bin):
+        self.largura_bin = largura_bin          #gambi
+        self._carregar_modelos_roupas()
+        self._pre_processamento()           # carregar IFP e NFP
+   
+        # ISPP para cada modelo de roupa
+        for modelo_str, inst in self.modelos_roupas.items():
+            inst:Instancia
+            if inst.l == None:                              # se não tem a largura, calcula-a.
+                print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP)
+                inst.l = larg
+                self._salvar_json_instancia(modelo_str,inst)                        
+                self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False)
+        # agora todos modelos tem sua largura.
+        
+        # BPP
+        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        nome_instancias_bpp = ""
+        str_Q = "Q"
+        for modelo_str, inst in self.modelos_roupas.items():
+            nome_instancias_bpp += modelo_str+"_"
+            str_Q += f"_{str(inst.Q)}"
+        nome_instancias_bpp += str_Q
+
+        self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_instancias_bpp)
+        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp)
+        # Finaliza
+        pass
+    # -----------------------------------------------------------------------------
+    def _carregar_modelos_roupas(self,lista_nomes=None):            ###### está sobrepondo as instancias dadas pelo usuário sempre
+        if lista_nomes==None:
+            lista_nomes=[]
+            for modelo_str, inst in self.modelos_roupas.items():
+                lista_nomes.append(modelo_str)
+
+        for nome in lista_nomes:
+            result = self._carregar_instancia(nome)
+            if result != None:
+                self.modelos_roupas[nome] = result
+    def _pre_processamento(self) -> bool:                                #corrigir
+        '''
+        Carrega IFP e NFP das instancias
+        '''
+        # modificou_modelos_roupas = False
+        for modelo_str, inst in self.modelos_roupas.items():
+            inst:Instancia
+            if inst.IFP==None:
+                print(modelo_str,"está sem IFP. Calculando...")
+                inst.IFP = self._calcular_todos_IFP_D(inst.W,inst.L,inst.R,inst.C,inst.T)
+                self._salvar_json_instancia(modelo_str,inst)
+                # modificou_modelos_roupas=True
+            if inst.NFP==None:
+                print(modelo_str,"está sem NFP. Calculando...")
+                inst.NFP = self._calcular_todos_NFP(inst.T) 
+                self._salvar_json_instancia(modelo_str,inst)
+                # modificou_modelos_roupas=True
+        pass
+    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D):
+        #verificar se é possível
+        #verificar se é possível
+        #verificar se é possível###############
+        modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
+        resultado_menor_faixa = modelo_ispp.rodar()
+        return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
+    def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000):
+        ######verificar se é possível
+        L = -1
+        for modelo_str, instancia in modelos.items():
+            instancia:Instancia
+            if L <= 0:
+                L = instancia.L
+            if instancia.L != L:
+                return f"os modelos de roupa tem alturas diferenes: {L} e {instancia.L}"     
+        # ver se todos modelos tem mesma altura que retangulo[1]
+        # ----------------------------------------
+        modelo_bpp = Modelo_BPP(modelos,largura_bin)
+        resultado_brkga_bin = modelo_bpp.rodar(gens=gens)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        # resultado_brkga_bin = modelo_bpp.evolve(num_geracoes=10000)
+        return resultado_brkga_bin                  # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+    # -----------------------------------------------------------------------------
+    
     # -----------------------------------------------------------------
     def _salvar_json_instancia(self, nome_modelo, instancia:Instancia):
         """
@@ -228,8 +310,6 @@ class Modelo:
             traceback.print_exc()
             return None
     # -----------------------------------------------------------------
-    
-    # -----------------------------------------------------------------
     def _salvar_modelos_roupas(self):               
         for modelo_str, instancia in self.modelos_roupas.items():
             self._salvar_json_instancia(modelo_str,instancia)
@@ -401,6 +481,25 @@ class Modelo:
                 ax.scatter(pontos_grade_x, pontos_grade_y, color='blue', s=2, alpha=0.1, 
                         marker='+', zorder=1)
             
+            # Calcula comprimento utilizado
+            comprimento_utilizado = 0
+            for tipo, pos in seq:
+                if 0 <= tipo < len(T):
+                    poligono = T[tipo]
+                    if isinstance(poligono, Polygon):
+                        max_x_poligono = max(x for x, y in poligono.exterior.coords)
+                    else:
+                        max_x_poligono = max(x for x, y in poligono)
+                    comprimento_total = pos[0] + max_x_poligono
+                    if comprimento_total > comprimento_utilizado:
+                        comprimento_utilizado = comprimento_total
+            
+            # ADIÇÃO: Linha vertical pontilhada mostrando a área horizontal utilizada
+            if comprimento_utilizado > 0:
+                ax.axvline(x=comprimento_utilizado, color='red', linestyle='--', 
+                          linewidth=2.5, alpha=0.9, 
+                          label=f'Comprimento utilizado: {comprimento_utilizado:.1f}')
+            
             # Configurações do gráfico
             ax.set_xlabel('Comprimento (L)')
             ax.set_ylabel('Largura (W)')
@@ -417,19 +516,6 @@ class Modelo:
             area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
             area_total = W * L
             # utilizacao = (area_utilizada / area_total) * 100 if area_total > 0 else 0
-            
-            # Calcula comprimento utilizado
-            comprimento_utilizado = max(pos[0] for tipo, pos in seq) if seq else 0
-            for tipo, pos in seq:
-                if 0 <= tipo < len(T):
-                    poligono = T[tipo]
-                    if isinstance(poligono, Polygon):
-                        max_x_poligono = max(x for x, y in poligono.exterior.coords)
-                    else:
-                        max_x_poligono = max(x for x, y in poligono)
-                    comprimento_total = pos[0] + max_x_poligono
-                    if comprimento_total > comprimento_utilizado:
-                        comprimento_utilizado = comprimento_total
             
             # Adiciona informações detalhadas
             info_text = f"""Malha: {W} × {L}
@@ -462,10 +548,10 @@ class Modelo:
             print(f"Erro ao plotar resultado ISPP: {e}")
             import traceback
             traceback.print_exc()
-            return None, None
+            return None, None    
     def _plotar_resultado_bpp(self, num_bins, seq, largura_bin, nome="resultado"):
         """
-        Plota simples do resultado dos bins com as peças
+        Plota resultado dos bins com as peças
         """
         try:
             import matplotlib.pyplot as plt
@@ -494,6 +580,10 @@ class Modelo:
             espacamento_vertical = 1.5
             margem = 0.5
             
+            # Calcular desperdício total
+            area_total_bins = len(seq) * largura_bin * altura_bin
+            area_utilizada = 0
+            
             # Desenhar cada bin
             for i, bin in enumerate(seq):
                 y = i * espacamento_vertical
@@ -520,36 +610,56 @@ class Modelo:
                                                 facecolor=cor, edgecolor='black', alpha=0.7)
                     ax.add_patch(item_rect)
                     
-                    # Adicionar texto do modelo se houver espaço
-                    if largura_item > largura_bin * 0.08:
-                        texto = item.split('_')[1] if '_' in item else item
-                        ax.text(x_atual + largura_item/2, y + altura_bin/2, texto,
-                            ha='center', va='center', fontsize=8, fontweight='bold')
+                    # Adicionar texto do modelo e largura se houver espaço
+                    if largura_item > largura_bin * 0.15:  # Aumentei o limite para caber mais texto
+                        texto_nome = item.split('_')[1] if '_' in item else item
+                        texto_largura = f'{largura_item:.1f}'
+                        # Texto em duas linhas: nome e largura
+                        ax.text(x_atual + largura_item/2, y + altura_bin/2 + 0.15, 
+                            texto_nome, ha='center', va='center', fontsize=6, fontweight='bold')
+                        ax.text(x_atual + largura_item/2, y + altura_bin/2 - 0.15, 
+                            f'({texto_largura})', ha='center', va='center', fontsize=5)
+                    elif largura_item > largura_bin * 0.08:
+                        # Para itens menores, mostrar apenas o nome
+                        texto_nome = item.split('_')[1] if '_' in item else item
+                        ax.text(x_atual + largura_item/2, y + altura_bin/2, texto_nome,
+                            ha='center', va='center', fontsize=6, fontweight='bold')
                     
                     x_atual += largura_item
                     soma_larguras += largura_item
+                    area_utilizada += largura_item * altura_bin
                 
-                # Informações do bin
+                # Informações do bin - apenas a utilização
                 utilizacao = (soma_larguras / largura_bin) * 100
+                
                 ax.text(largura_bin + 0.1, y + altura_bin/2, 
-                    f'{utilizacao:.1f}%', va='center', fontsize=9)
+                    f'{utilizacao:.1f}%', 
+                    va='center', fontsize=8)  # Fonte menor
                 
                 # Número do bin
                 ax.text(-0.5, y + altura_bin/2, f'Bin {i+1}', 
-                    ha='right', va='center', fontweight='bold')
+                    ha='right', va='center', fontweight='bold', fontsize=9)  # Fonte menor
+            
+            # Calcular métricas finais
+            desperdicio_total = ((area_total_bins - area_utilizada) / area_total_bins) * 100
+            area_desperdicada = area_total_bins - area_utilizada
             
             # Configurar eixos
             max_y = len(seq) * espacamento_vertical
             ax.set_xlim(-2, largura_bin + 2)
             ax.set_ylim(-1, max_y)
-            ax.set_xlabel('Largura')
-            ax.set_ylabel('Bins')
-            ax.set_title(f'Resultado - {num_bins} bins | Largura do bin: {largura_bin}')
+            ax.set_xlabel('Largura', fontsize=10)  # Fonte menor
+            ax.set_ylabel('Bins', fontsize=10)  # Fonte menor
+            
+            # Título com informações de desperdício
+            ax.set_title(f'Resultado - {num_bins} bins | Largura do bin: {largura_bin}\n'
+                        f'Desperdício Total: {desperdicio_total:.1f}% | Área Desperdiçada: {area_desperdicada:.1f}', 
+                        fontsize=11)  # Fonte um pouco menor
             
             # Grade
             ax.grid(True, alpha=0.3, axis='x')
             
-            # Legenda
+            # Legenda com fonte menor - mostra nome e largura
             legend_elements = []
             for modelo, cor in cor_por_modelo.items():
                 if modelo in self.modelos_roupas:
@@ -559,7 +669,8 @@ class Modelo:
                     nome_legenda = modelo
                 legend_elements.append(patches.Patch(facecolor=cor, label=nome_legenda))
             
-            ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.15, 1))
+            ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.15, 1), 
+                    fontsize=8)  # Fonte menor na legenda
             
             # Ajustar layout
             plt.tight_layout()
@@ -568,99 +679,17 @@ class Modelo:
             if not os.path.exists("resultados"):
                 os.makedirs("resultados")
             
-            caminho_imagem = os.path.join("resultados", f"{nome}_simple.png")
+            caminho_imagem = os.path.join("resultados", f"{nome}.png")
             plt.savefig(caminho_imagem, dpi=200, bbox_inches='tight')
-            print(f"Plot simples salvo em: {caminho_imagem}")
+            print(f"Plot salvo em: {caminho_imagem}")
             
             plt.show()
             
         except Exception as e:
-            print(f"Erro ao plotar resultado simples: {e}")
+            print(f"Erro ao plotar resultado: {e}")
             import traceback
             traceback.print_exc()
     # -----------------------------------------------------------------
-    def rodar(self, largura_bin):
-        self.largura_bin = largura_bin          #gambi
-        self._carregar_modelos_roupas()
-   
-        # Pré Carregar os NFP e IFP das instancias e salvar
-        self._pre_processamento()           # carregar IFP e NFP
-   
-        # ISPP para cada modelo de roupa
-        for modelo_str, inst in self.modelos_roupas.items():
-            inst:Instancia
-            if inst.l == None:                              # se não tem a largura, calcula-a.
-                print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP)
-                inst.l = larg
-                self._salvar_json_instancia(modelo_str,inst)                        
-                self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False)
-        # agora todos modelos tem sua largura.
-        # BPP
-        resultado_bins = self.resolver_bpp(self.modelos_roupas,self.largura_bin)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-        num_bins, desperdicio, seq_corte, largura_bin, hist = resultado_bins
-        nome_instancias_bpp = ""
-        for modelo_str, inst in self.modelos_roupas.items():
-            nome_instancias_bpp += modelo_str+"_"
-        nome_instancias_bpp += f"-_n_bins={num_bins}"
-        self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_instancias_bpp)
-        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp)
-        # Finaliza
-        pass
-    # -----------------------------------------------------------------------------
-
-    # -----------------------------------------------------------------------------
-    def _carregar_modelos_roupas(self,lista_nomes=None):
-        if lista_nomes==None:
-            lista_nomes=[]
-            for modelo_str, inst in self.modelos_roupas.items():
-                lista_nomes.append(modelo_str)
-
-        for nome in lista_nomes:
-            result = self._carregar_instancia(nome)
-            if result != None:
-                self.modelos_roupas[nome] = result
-    def _pre_processamento(self) -> bool:                                #corrigir
-        '''
-        Carrega IFP e NFP das instancias
-        '''
-        # modificou_modelos_roupas = False
-        for modelo_str, inst in self.modelos_roupas.items():
-            inst:Instancia
-            if inst.IFP==None:
-                print(modelo_str,"está sem IFP. Calculando...")
-                inst.IFP = self._calcular_todos_IFP_D(inst.W,inst.L,inst.R,inst.C,inst.T)
-                self._salvar_json_instancia(modelo_str,inst)
-                # modificou_modelos_roupas=True
-            if inst.NFP==None:
-                print(modelo_str,"está sem NFP. Calculando...")
-                inst.NFP = self._calcular_todos_NFP(inst.T) 
-                self._salvar_json_instancia(modelo_str,inst)
-                # modificou_modelos_roupas=True
-        pass
-    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D):
-        #verificar se é possível
-        #verificar se é possível
-        #verificar se é possível###############
-        modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
-        resultado_menor_faixa = modelo_ispp.rodar()
-        return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
-    def resolver_bpp(self,modelos:dict, largura_bin:float):
-        ######verificar se é possível
-        L = -1
-        for modelo_str, instancia in modelos.items():
-            instancia:Instancia
-            if L <= 0:
-                L = instancia.L
-            if instancia.L != L:
-                return f"os modelos de roupa tem alturas diferenes: {L} e {instancia.L}"     
-        # ver se todos modelos tem mesma altura que retangulo[1]
-        # ----------------------------------------
-        modelo_bpp = Modelo_BPP(modelos,largura_bin)
-        resultado_brkga_bin = modelo_bpp.rodar()    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-        # resultado_brkga_bin = modelo_bpp.evolve(num_geracoes=10000)
-        return resultado_brkga_bin                  # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-    # -----------------------------------------------------------------------------
     def _gerar_pontos_malha(self,W,L,R,C) -> dict:
         '''
         Retorna um dicionario de elementos (d,(x,y)); d inteiro; x,y reais

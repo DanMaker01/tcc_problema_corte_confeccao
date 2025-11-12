@@ -222,14 +222,14 @@ def exemplo_1():
         Polygon([(0,0), (3,0), (3,2), (2,2), (2,1), (1,1), (1,2), (0,2)]),  # Peça com recorte
         Polygon([(0.0, 0.0), (1.1, 2.1), (0.9, 2.1)]),  # Triângulo
         Polygon([(0,0),(1,-1),(1,1)]),  # Triângulo assimétrico
-        Polygon([(0,0), (2,0), (2,1), (0,1)])  # Retângulo simples
+        Polygon([(0,0), (2,0), (2,1), (0,1)])  # Retângulo 
     ]
     
     titles = [
         "Peça com Recorte",
         "Triângulo",
         "Triângulo Assimétrico", 
-        "Retângulo Simples"
+        "Retângulo"
     ]
     
     for i, (piece_polygon, title) in enumerate(zip(piece_examples, titles)):

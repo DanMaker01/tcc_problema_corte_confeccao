@@ -25,7 +25,7 @@ class Modelo_ISPP:
         pass
     # Principal -----------------------------------------------
     def rodar(self):
-        brkga_resultado_strip = self._iniciar_brkga_ordem(100,0.3,0.4,gens=10)   # acha a faixa de menor comprimento
+        brkga_resultado_strip = self._iniciar_brkga_ordem(100,0.3,0.4,generations=4)   # gerações reduzidas para testes em casa
         return brkga_resultado_strip        # (best_sequence, best_fitness, best_pecas_posicionadas )                               # resultado = (melhor_sequencia, melhor_fitness)    
     # Sub-rotinas ---------------------------------------------
     def _verificar_requisitos_para_modelo(self,W,L,R,C,T,q):
@@ -36,10 +36,10 @@ class Modelo_ISPP:
         if q in [None,[],{}]:
             return False
         return True
-    def _iniciar_brkga_ordem(self, pop_size=100,elite_frac=0.3,mutant_frac=0.4, gens=10):
+    def _iniciar_brkga_ordem(self, pop_size=100,elite_frac=0.3,mutant_frac=0.4, generations=10):
         print("iniciando brkga-ordem, para achar a menor faixa, dados T, q e Malha.")
         brkga_ordem = BRKGA_ordem(sum(self.q), self._rodar_BL,pop_size=pop_size,mutant_frac=mutant_frac,elite_frac=elite_frac,seed=42)
-        brkga_resultado = brkga_ordem.evolve(self.q, gens=gens)
+        brkga_resultado = brkga_ordem.evolve(self.q, gens=generations)
         return brkga_resultado      # (best_sequence, best_fitness, best_pecas_posicionadas )
     # Auxiliares ----------------------------------------------
 

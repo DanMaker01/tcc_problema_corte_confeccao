@@ -11,9 +11,8 @@ import pyclipper
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon as MplPolygon
 # -----------------------------------------------------------------------
-# -----------------------------------------------------------------------
-# -----------------------------------------------------------------------
 
+# -----------------------------------------------------------------------
 def to_clipper_coords(polygon, scale=100000):
     """
     Converte um polígono Shapely (exterior e interiores) para o formato de coordenadas inteiras esperado pelo pyclipper.
@@ -28,7 +27,6 @@ def to_clipper_coords(polygon, scale=100000):
         for interior in polygon.interiors:
             paths.append([[int(x * scale), int(y * scale)] for x, y in interior.coords[:-1]])
     return paths
-
 def from_clipper_coords(clipper_paths, scale=100000):
     """
     Converte caminhos do formato pyclipper (coordenadas inteiras) de volta para Shapely Polygon ou MultiPolygon.
@@ -52,7 +50,6 @@ def from_clipper_coords(clipper_paths, scale=100000):
         for i in range(1, len(polygons)):
             result = result.union(polygons[i])
         return result
-
 def calculate_nfp(polygon_a:Polygon, polygon_b:Polygon, ref_point_a=(0, 0), ref_point_b=(0, 0)):
     """
     Calcula o No-Fit Polygon (NFP) entre dois polígonos considerando pontos de referência.
@@ -180,11 +177,12 @@ def calculate_nfp(polygon_a:Polygon, polygon_b:Polygon, ref_point_a=(0, 0), ref_
         return nfp_final
     
     return None
-
-# --------------------------------------------------------------------------------
-# Exemplos -----------------------------------------------------------------------
 # --------------------------------------------------------------------------------
 
+
+# --------------------------------------------------------------------------------
+# Exemplo
+# --------------------------------------------------------------------------------
 def plot_nfp_example(poly_a_coords, poly_b_coords, nfp_result, title):
     """
     Plota os polígonos A, B e o NFP resultante
@@ -267,12 +265,9 @@ def plot_nfp_example(poly_a_coords, poly_b_coords, nfp_result, title):
     
     plt.tight_layout()
     plt.show()
-
-
-# --------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------
         
+# --------------------------------------------------------------------------------
 def run_teste_A():
 
     curvo = [(0,0),(3,0),(3,4),(0,4),(0,2),(1,2),(1,3),(2,3),(2,1),(0,1),]             # 0

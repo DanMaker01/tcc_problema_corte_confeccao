@@ -46,11 +46,13 @@ class BRKGA_ordem:
                 demanda_sequenciada.append(i)
 
         # ii=1
-        # total=len(self.population)
-        for chrom in self.population:               # para toda a população
+        total=len(self.population)
+        for i,chrom in enumerate(self.population):               # para toda a população
             sequence_indexes = self.decode(chrom)
             sequence = [demanda_sequenciada[i] for i in sequence_indexes]
             fitness,pecas_posicionadas = self.fitness_func(sequence)   #roda o BL em si
+            if i % 10 == 0:
+                print(f"{i+1}/{total} fit:{fitness} seq:{sequence} pecas_pos:{str(pecas_posicionadas)}")
             # if ii in [2,4,8,16,32,64,100]:
             #     print(f"{ii}/{total}\tseq:{sequence}\tlargura:{fitness}")
 

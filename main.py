@@ -42,16 +42,19 @@ def main():
     R=105
     C=76
     # BPP
-    modelos_tamanhos = [0.9, 1.0, 1.06, 1.13]
-    Q = [10, 20, 20, 10]
+    modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
+    Q = [1, 1, 1, 1, 1]
+    # modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
+    # Q = [1, 1, 1, 1, 1]
     largura_bin = 110
     #
 
     for i,escala in enumerate(modelos_tamanhos):
         nome = f"marques_{escala}_{W}_{L}_{R}_{C}"
         T,q = instancia_marques(escala)
-        modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i])
-    modelo.rodar(largura_bin=largura_bin)
+        modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i]) ### não deveria ir Q aqui
+    modelo.rodar(largura_bin=largura_bin)       # rodar só os que estiverem neste dicionário
+    # modelo.rodar(largura_bin=largura_bin)
 
 #rodar main
 main()
