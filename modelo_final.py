@@ -52,9 +52,9 @@ class Modelo:
         
         # BPP
         t0=time.time()
-        print(f"BPP demorou {time.time()-t0} seg.")
         # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=500000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        print(f"BPP demorou {time.time()-t0} seg.")
         nome_instancias_bpp = ""
         str_Q = "Q"
         for modelo_str, inst in self.modelos_roupas.items():
