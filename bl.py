@@ -1,30 +1,33 @@
 
 # ---------------------------------------------
 from typing import List, Tuple
-from malha import Malha
 from shapely.geometry import Polygon, Point
 from shapely.prepared import prep
 
 # ---------------------------------------------
 class Bottom_Left():
-    def __init__(self, M:Malha, seq, NFP, DIFP):    # precisa passar o T?não! ##### implementar
-        self.M : Malha = M
+    def __init__(self, W,L,R,C, seq, NFP, DIFP):    # precisa passar o T?não! ##### implementar
+        self.W=W
+        self.L=L
+        self.R=R
+        self.C=C
+        self.seq_demanda = seq  # seq = [0,0,1,1,2,2,2,2,3,3,4]
         self.NFP = NFP
         self.DIFP = DIFP
-        self.seq_demanda = seq                      # seq = [0,0,1,1,2,2,2,2,3,3,4]
         pass
 
     def rodar(self,verbose = False):
         pecas_posicionadas = []                     # pecas = [(t,(x,y)), (t,(x,y)), ...]
         for i,t in enumerate(self.seq_demanda):
             S = self.DIFP[t]
+            S = [p[1] for p in S]
             if len(S)<1:
                 print("erro de IFP, refine a manhã ou aumente as dimensões")    # quebrar código?
             for r in pecas_posicionadas:
                 u,vertice = r
                 translacao = vertice
-                NFP_tr = self._transladar_poligono(self.NFP[u,t],translacao)
-                NFP_tr_discreto = self._discretizar_poligono(NFP_tr,self.M,S,somente_interior=True)
+                NFP_tr = self._transladar_poligono(Polygon(self.NFP[u,t]),translacao)
+                NFP_tr_discreto = self._discretizar_poligono(NFP_tr,self.W,self.L,self.R,self.C,S,somente_interior=True)
                 S = self._remover_pontos(S,NFP_tr_discreto)
                 if len(S)<1:
                     if verbose:
@@ -39,10 +42,12 @@ class Bottom_Left():
                 pecas_posicionadas.append((t,vertice))
         return pecas_posicionadas                           # lista de elementos (t,(x,y))
     
-    def _discretizar_poligono(self, poligono:Polygon, malha:Malha, pontos_a_verificar:list[Tuple],
+    def _discretizar_poligono(self, poligono:Polygon, W,L,R,C, pontos_a_verificar:list[Tuple],
                               somente_interior:bool=False, epsilon :float = 1e-6):
         
-        adaptive_epsilon = max(epsilon,min(malha.gx(),malha.gy()) * 0.001)
+        gx = L/(C-1)
+        gy = W/(R-1)
+        adaptive_epsilon = max(epsilon,min(gx,gy) * 0.001)
         
         if somente_interior:
             poligono_robusto = poligono.buffer(-adaptive_epsilon) if poligono.area > adaptive_epsilon else poligono
@@ -87,6 +92,6 @@ class Bottom_Left():
         dx, dy = translacao
         return Polygon([(x + dx, y + dy) for x, y in poligono.exterior.coords])
     
-    def _remover_pontos(self,pontos_base: list, pontos_a_remover: list) -> list:
-        to_remove = set(pontos_a_remover)                   
-        return [p for p in pontos_base if p not in to_remove]
+    def _remover_pontos(self, pontos_base: list, pontos_a_remover: list) -> list:
+        to_remove = set(map(tuple, pontos_a_remover))
+        return [p for p in pontos_base if tuple(p) not in to_remove]

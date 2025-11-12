@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 # --------------------------------------------
 class Modelo_ISPP:
-    def __init__(self,W,L,R,C,T:list,q:list):
+    def __init__(self,W,L,R,C,T:list,q:list,NFP,IFP_D):
         existe_solucao = self._verificar_requisitos_para_modelo(W,L,R,C,T,q)
         if not existe_solucao:
             print("modelo ISPP não cumpre requisitos para ter solução:",W,L,R,C)
@@ -18,15 +18,15 @@ class Modelo_ISPP:
         # modelo
         self.T = T
         self.q = q
-        self.NFP    : dict
-        self.IFP_D  : list
+        self.NFP    : dict = NFP
+        self.IFP_D  : list = IFP_D
         # extra
         self.sequencias_resolvidas={}
         pass
     # Principal -----------------------------------------------
     def rodar(self):
-        brkga_resultado_strip = self._iniciar_brkga_ordem(100,0.3,0.4,generations=1)   # acha a faixa de menor comprimento
-        return brkga_resultado_strip                                    # resultado = (melhor_sequencia, melhor_fitness)    
+        brkga_resultado_strip = self._iniciar_brkga_ordem(100,0.3,0.4,gens=10)   # acha a faixa de menor comprimento
+        return brkga_resultado_strip        # (best_sequence, best_fitness, best_pecas_posicionadas )                               # resultado = (melhor_sequencia, melhor_fitness)    
     # Sub-rotinas ---------------------------------------------
     def _verificar_requisitos_para_modelo(self,W,L,R,C,T,q):
         if W <= 0 or L<=0 or R <=0 or C <=0:
@@ -36,12 +36,11 @@ class Modelo_ISPP:
         if q in [None,[],{}]:
             return False
         return True
-    def _iniciar_brkga_ordem(self, pop_size=100,elite_frac=0.3,mutant_frac=0.4, generations=10):
+    def _iniciar_brkga_ordem(self, pop_size=100,elite_frac=0.3,mutant_frac=0.4, gens=10):
         print("iniciando brkga-ordem, para achar a menor faixa, dados T, q e Malha.")
-        brkga_ordem = BRKGA_ordem(sum(self.q), self._rodar_BL,pop_size=pop_size,
-                                  mutant_frac=mutant_frac,elite_frac=elite_frac,seed=42)
-        brkga_resultado = brkga_ordem.evolve(self.q, generations=generations)
-        return brkga_resultado      # (self.best_sequence, self.best_fitness)
+        brkga_ordem = BRKGA_ordem(sum(self.q), self._rodar_BL,pop_size=pop_size,mutant_frac=mutant_frac,elite_frac=elite_frac,seed=42)
+        brkga_resultado = brkga_ordem.evolve(self.q, gens=gens)
+        return brkga_resultado      # (best_sequence, best_fitness, best_pecas_posicionadas )
     # Auxiliares ----------------------------------------------
 
     # BL ----------------------------------------------    
@@ -90,20 +89,18 @@ class Modelo_ISPP:
             return 9e9
 
     def _rodar_BL(self,seq) -> float:   ### implementar
-        largura_ja_existente = self.sequencias_resolvidas.get(tuple(seq))   #se já foi resolvido antes, adianta tempo
-        # print(f"rodando BL, seq = {seq}")
-        if largura_ja_existente != None:                                   
-            return largura_ja_existente ####### salvar entre sessões??
+        resolvida = self.sequencias_resolvidas.get(tuple(seq))   #se já foi resolvido antes, adianta tempo
+        if resolvida != None:
+            largura_ja_existente, pecas_posicionadas = resolvida
+            if largura_ja_existente != None:                                   
+                return largura_ja_existente,pecas_posicionadas ####### salvar entre sessões?? acho q não.
         else:                
-            M = self.malha
-            NFP = self.NFP
-            DIFP = self.DIFP
-            bl = Bottom_Left(M,seq,NFP,DIFP)
-            bl_resultado = bl.rodar()           # retorna lista com itens (t,(x,y))
-            # bl_resultado_pontos = [bl_resultado[i][1] for i in range(len(bl_resultado))]
-            # self._plotar_resultado(M,bl_resultado_pontos,seq)
-            largura_resultado_bl = self._medir_largura_faixa_BL(bl_resultado)   
-            self.sequencias_resolvidas[tuple(seq)] = largura_resultado_bl    #
-            return largura_resultado_bl
+            bl = Bottom_Left(self.W,self.L,self.R,self.C,seq,self.NFP,self.IFP_D)
+            pecas_posicionadas = bl.rodar()           # retorna lista com itens (t,(x,y))
+            largura_resultado_bl = self._medir_largura_faixa_BL(pecas_posicionadas)   
+            self.sequencias_resolvidas[tuple(seq)] = (largura_resultado_bl,pecas_posicionadas)    #
+            return largura_resultado_bl, pecas_posicionadas
+
+        # print(f"rodando BL, seq = {seq}")
     # --------------------------------------------------------------------------------
 

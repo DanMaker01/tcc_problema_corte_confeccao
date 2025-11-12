@@ -31,6 +31,7 @@ class BRKGA_ordem:
         # Melhor solução global
         self.best_sequence = None
         self.best_fitness = float('inf')
+        self.best_pecas_posicionadas = []
 
     def decode(self, chromosome: np.ndarray) -> List[int]:
         """Decodifica cromossomo em sequência (ordenação pelos alelos)."""
@@ -45,11 +46,11 @@ class BRKGA_ordem:
                 demanda_sequenciada.append(i)
 
         # ii=1
-        total=len(self.population)
+        # total=len(self.population)
         for chrom in self.population:               # para toda a população
             sequence_indexes = self.decode(chrom)
             sequence = [demanda_sequenciada[i] for i in sequence_indexes]
-            fitness = self.fitness_func(sequence)   #roda o BL em si
+            fitness,pecas_posicionadas = self.fitness_func(sequence)   #roda o BL em si
             # if ii in [2,4,8,16,32,64,100]:
             #     print(f"{ii}/{total}\tseq:{sequence}\tlargura:{fitness}")
 
@@ -58,7 +59,7 @@ class BRKGA_ordem:
             if not np.isfinite(fitness):
                 fitness = 1e9
             
-            evaluated.append((fitness, chrom))
+            evaluated.append((fitness, chrom, pecas_posicionadas))
         
         return sorted(evaluated, key=lambda x: x[0])
 
@@ -72,11 +73,11 @@ class BRKGA_ordem:
         new_pop = []
 
         # Grupo elite
-        elite_chroms = [chrom for _, chrom in evaluated[:self.elite_size]]
+        elite_chroms = [chrom for _, chrom,pecas_posicionadas in evaluated[:self.elite_size]]
         new_pop.extend(elite_chroms)
 
         # Grupo não-elite
-        non_elite_pool = [chrom for _, chrom in evaluated[self.elite_size:]]
+        non_elite_pool = [chrom for _, chrom,pecas_posicionadas in evaluated[self.elite_size:]]
 
         elite_indices = np.random.randint(0, len(elite_chroms), self.offspring_size)
         non_elite_indices = np.random.randint(0, len(non_elite_pool), self.offspring_size)
@@ -92,13 +93,13 @@ class BRKGA_ordem:
 
         self.population = np.array(new_pop, dtype=float)
 
-    def evolve(self, demanda_q, generations: int = 100, verbose=True) -> Tuple[List[int], float]:
+    def evolve(self, demanda_q, gens: int = 100, verbose=True) -> Tuple[List[int], float]:
         """Executa o processo evolutivo do BRKGA."""
         log_interval = 1 if verbose is True else (verbose if isinstance(verbose, int) else None)
         
-        for gen in range(generations):
+        for gen in range(gens):
             evaluated = self.evaluate_population(demanda_q)
-            current_best_fitness, current_best_chrom = evaluated[0]
+            current_best_fitness, current_best_chrom, current_best_pecas_posicionadas = evaluated[0]
 
             # Atualiza melhor global
             if current_best_fitness < self.best_fitness:
@@ -110,6 +111,7 @@ class BRKGA_ordem:
                         demanda_sequenciada.append(i)
                 sequence = [demanda_sequenciada[i] for i in sequence_indexes]
                 self.best_sequence = sequence
+                self.best_pecas_posicionadas = current_best_pecas_posicionadas
             # Log de progresso
             if log_interval and gen % log_interval == 0:
                 print(f"Gen {gen:03d}: Best = {current_best_fitness:.4f} | Valid = {len(evaluated)}")
@@ -122,8 +124,9 @@ class BRKGA_ordem:
             print("\n=== Resultado Final ===")
             print(f"Melhor sequência: {self.best_sequence}")
             print(f"Fitness: {self.best_fitness:.6f}")
+            # print(f"Peças posicionadas: {str(self.best_pecas_posicionadas)}")
 
-        return self.best_sequence, self.best_fitness
+        return self.best_sequence, self.best_fitness, self.best_pecas_posicionadas
 
     def create_initial_solution(self, method: str = "random") -> Tuple[List[int], float]:
         """Gera uma solução inicial (útil para comparar com o BRKGA)."""

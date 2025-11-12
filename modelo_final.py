@@ -5,26 +5,34 @@ from modelo_ISPP import Modelo_ISPP
 from modelo_BPP import Modelo_BPP
 import json
 import os
+from datetime import datetime
 from typing import List, Tuple
 from shapely.geometry import Polygon, Point
 from shapely.prepared import prep
 from instancia import Instancia
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+import traceback
 # ---------------------------------------------------------------------------------
 
 class Modelo:
     def __init__(self):
         self.diretorio_instancias = "instancias"
         self.modelos_roupas:dict = {}              #str_modelo:Instancia
-        self.largura_bin   :float= 0
+        self.largura_bin   :float
         pass
     def adicionar_modelo_roupa(self,str_modelo,poligonos_T:list,demanda_itens_q:list,W,L,R,C,demanda_produto_Q:int,largura_l=None,IFP=None,NFP=None):
         inst = Instancia(poligonos_T,demanda_itens_q,W,L,R,C,demanda_produto_Q,largura_l,IFP,NFP)
         self.modelos_roupas[str_modelo]= inst
-        self._salvar_instancia(str_modelo,inst)
+        # self._salvar_instancia(str_modelo,inst)
+    def editar_modelo_roupa_Q(self,str_modelo , Q:int):
+        inst = self.modelos_roupas[str_modelo]
+        inst.Q = Q
     def _limpar_modelos_roupa(self):
         self.modelos_roupas.clear()
     # -----------------------------------------------------------------
-    def _salvar_instancia(self, nome_modelo, instancia:Instancia):
+    def _salvar_json_instancia(self, nome_modelo, instancia:Instancia):
         """
         Salva uma instância em arquivo usando JSON
         """
@@ -82,7 +90,6 @@ class Modelo:
             print(f"Instância '{nome_modelo}' salva com sucesso em {caminho_arquivo}")
         except Exception as e:
             print(f"Erro ao salvar instância '{nome_modelo}': {e}")
-
     def _carregar_instancia(self, nome_modelo) -> Instancia:
         """
         Carrega uma instância de arquivo usando JSON
@@ -149,60 +156,495 @@ class Modelo:
         except Exception as e:
             print(f"Erro ao carregar instância '{nome_modelo}': {e}")
             return None
+    def _gerar_img_resultado(self, resultado_bins,nome):
+        pass
+    def _salvar_json_resultado_bpp(self, num_bins, desperdicio, sequencia_de_corte, largura_bin, historico, nome):
+        """
+        Salva o resultado completo do BPP em JSON incluindo largura_bin e histórico.
+        
+        Args:
+            num_bins: Número total de bins utilizados
+            desperdicio: Total de desperdício/sobra
+            sequencia_de_corte: Lista de bins com sequência de itens
+            largura_bin: Largura/capacidade do bin
+            historico: Histórico de evolução do algoritmo
+            nome: Nome do arquivo para salvar
+        """
+        try:
+            if not os.path.exists("resultados"):
+                os.makedirs("resultados")
+            
+            caminho_arquivo = os.path.join("resultados", f"{nome}.json")
+
+            # Estrutura completa do resultado
+            resultado_completo = {
+                "metadata": {
+                    "data_criacao": datetime.now().isoformat(),
+                    "nome_arquivo": nome,
+                    "versao": "1.0"
+                },
+                "parametros": {
+                    "largura_bin": largura_bin,
+                    "num_bins": num_bins,
+                    "desperdicio_total": desperdicio,
+                    "taxa_utilizacao": 1 - (desperdicio / (num_bins * largura_bin)) if num_bins > 0 else 0
+                },
+                "sequencia_de_corte": sequencia_de_corte,
+                "historico_evolucao": historico,
+                "estatisticas": {
+                    "melhor_desperdicio": min(historico) if historico else 0,
+                    "pior_desperdicio": max(historico) if historico else 0,
+                    "desperdicio_medio": sum(historico) / len(historico) if historico else 0,
+                    "num_geracoes": len(historico)
+                }
+            }
+
+            def converter_para_json(obj):
+                if isinstance(obj, dict):
+                    return {str(k): converter_para_json(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [converter_para_json(item) for item in obj]
+                elif isinstance(obj, tuple):
+                    return list(obj)
+                elif isinstance(obj, (int, float)):
+                    return float(obj) if isinstance(obj, float) else obj
+                elif hasattr(obj, '__dict__'):
+                    return converter_para_json(obj.__dict__)
+                else:
+                    return obj
+
+            resultado_serializavel = converter_para_json(resultado_completo)
+
+            with open(caminho_arquivo, 'w', encoding='utf-8') as f:
+                json.dump(resultado_serializavel, f, indent=2, ensure_ascii=False)
+            
+            print(f"Resultado salvo com sucesso em {caminho_arquivo}")
+            print(f"Bins: {num_bins}, Desperdício: {desperdicio:.2f}, Utilização: {resultado_completo['parametros']['taxa_utilizacao']:.1%}")
+            
+            return resultado_completo
+            
+        except Exception as e:
+            print(f"Erro ao salvar resultado: {e}")
+            traceback.print_exc()
+            return None
+    # -----------------------------------------------------------------
+    
     # -----------------------------------------------------------------
     def _salvar_modelos_roupas(self):               
         for modelo_str, instancia in self.modelos_roupas.items():
-            self._salvar_instancia(modelo_str,instancia)
-        pass
-    def _carregar_modelos_roupas(self,lista_nomes):
-        for nome in lista_nomes:
-            self.modelos_roupas[nome] = self._carregar_instancia(nome)
-    # -----------------------------------------------------------------
-    def _salvar_resultado(self):                       #####implementar
+            self._salvar_json_instancia(modelo_str,instancia)
         pass
     # -----------------------------------------------------------------
-    def rodar(self):
+    def _plotar_ispp(self, W, L, R, C, T, seq, pontos=None, titulo="Resultado do ISPP", 
+                    mostrar_grade=True, mostrar_numeros=True, mostrar_pontos_difp=False,
+                    salvar_arquivo=None, mostrar_plot=True):
+        """
+        Plota o resultado do ISPP (Irregular Strip Packing Problem)
+        
+        Args:
+            W: Largura da faixa
+            L: Comprimento da faixa
+            R: Número de linhas da grade
+            C: Número de colunas da grade
+            T: Lista de polígonos dos tipos
+            seq: Sequência de posicionamento [(tipo, (x,y)), ...]
+            pontos: Lista de pontos DIFP disponíveis (opcional)
+            titulo: Título do gráfico
+            mostrar_grade: Se True, mostra a grade da malha
+            mostrar_numeros: Se True, mostra números dos itens na sequência
+            mostrar_pontos_difp: Se True, mostra os pontos DIFP em fundo
+            salvar_arquivo: Caminho para salvar o gráfico
+        """
+        try:
+            import matplotlib.pyplot as plt
+            import matplotlib.patches as patches
+            from shapely.geometry import Polygon
+            
+            fig, ax = plt.subplots(figsize=(14, 10))
+            
+            # Configura limites do gráfico
+            ax.set_xlim(0, L)
+            ax.set_ylim(0, W)
+            ax.set_aspect('equal')
+            
+            # Desenha o retângulo da área útil
+            retangulo = patches.Rectangle((0, 0), L, W, 
+                                        linewidth=2, edgecolor='black', 
+                                        facecolor='lightgray', alpha=0.2)
+            ax.add_patch(retangulo)
+            
+            # Cores para diferentes tipos de polígonos
+            cores = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 
+                    'pink', 'gray', 'olive', 'cyan', 'magenta', 'yellow',
+                    'navy', 'teal', 'coral', 'indigo']
+            
+            # Dicionário para contar ocorrências de cada tipo e controle de legenda
+            contador_tipos = {}
+            tipos_utilizados = set()
+            
+            # Função auxiliar para transladar polígono
+            def _transladar_poligono(poligono, ponto):
+                """Translada um polígono para uma posição específica"""
+                if isinstance(poligono, Polygon):
+                    # Para objetos Polygon do shapely
+                    return Polygon([(x + ponto[0], y + ponto[1]) for x, y in poligono.exterior.coords])
+                else:
+                    # Para lista de vértices
+                    return [(x + ponto[0], y + ponto[1]) for x, y in poligono]
+            
+            # Função auxiliar para calcular área utilizada
+            def _calcular_area_utilizada_sequencia(T, sequencia):
+                """Calcula a área total utilizada pela sequência"""
+                area_total = 0.0
+                for tipo, posicao in sequencia:
+                    if 0 <= tipo < len(T):
+                        poligono = T[tipo]
+                        if isinstance(poligono, Polygon):
+                            area_total += poligono.area
+                        else:
+                            # Calcula área manualmente para lista de vértices
+                            poly = Polygon(poligono)
+                            area_total += poly.area
+                return area_total
+            
+            # Plota cada polígono posicionado da sequência
+            for i, (tipo, posicao) in enumerate(seq):
+                # Verifica se o tipo é válido
+                if 0 <= tipo < len(T):
+                    # Obtém o polígono original do tipo
+                    poligono_original = T[tipo]
+                    
+                    # Translada o polígono para a posição especificada
+                    poligono_posicionado = _transladar_poligono(poligono_original, posicao)
+                    
+                    # Conta ocorrências do tipo
+                    if tipo not in contador_tipos:
+                        contador_tipos[tipo] = 0
+                    contador_tipos[tipo] += 1
+                    tipos_utilizados.add(tipo)
+                    
+                    # Cor baseada no tipo
+                    cor = cores[tipo % len(cores)]
+                    
+                    # Extrai coordenadas do polígono posicionado
+                    if isinstance(poligono_posicionado, Polygon):
+                        x, y = poligono_posicionado.exterior.xy
+                    else:
+                        # Se for lista de vértices
+                        x = [p[0] for p in poligono_posicionado]
+                        y = [p[1] for p in poligono_posicionado]
+                    
+                    # Label para legenda (apenas na primeira ocorrência de cada tipo)
+                    label = f'Tipo {tipo}' if contador_tipos[tipo] == 1 else ""
+                    
+                    # Plota o polígono posicionado
+                    patch = patches.Polygon(list(zip(x, y)), 
+                                        closed=True, 
+                                        edgecolor=cor,
+                                        facecolor=cor,
+                                        alpha=0.7,
+                                        linewidth=1.5,
+                                        label=label)
+                    ax.add_patch(patch)
+                    
+                    # Marca o ponto de posicionamento (referência)
+                    ax.scatter([posicao[0]], [posicao[1]], 
+                            color='black', s=40, zorder=10, marker='x', linewidth=2)
+                    
+                    # Adiciona número da sequência no centroide do polígono
+                    if mostrar_numeros:
+                        if isinstance(poligono_posicionado, Polygon):
+                            centroid = poligono_posicionado.centroid
+                            centroid_x, centroid_y = centroid.x, centroid.y
+                        else:
+                            # Calcula centroide manualmente para lista de vértices
+                            centroid_x = sum(x) / len(x)
+                            centroid_y = sum(y) / len(y)
+                        
+                        ax.text(centroid_x, centroid_y, str(i+1), 
+                            fontsize=9, fontweight='bold',
+                            ha='center', va='center',
+                            bbox=dict(boxstyle='circle', facecolor='white', alpha=0.9),
+                            zorder=15)
+            
+            # Plota os pontos DIFP disponíveis em fundo (opcional)
+            if mostrar_pontos_difp and pontos:
+                x_vals = [p[0] for p in pontos]
+                y_vals = [p[1] for p in pontos]
+                ax.scatter(x_vals, y_vals, color='gray', s=6, alpha=0.2, 
+                        zorder=1, label=f'Pontos DIFP ({len(pontos)})')
+            
+            # Desenha a grade da malha se solicitado
+            if mostrar_grade:
+                # Calcula espaçamento da grade
+                gx = L / (C - 1) if C > 1 else L
+                gy = W / (R - 1) if R > 1 else W
+                
+                # Linhas verticais
+                for i in range(C):
+                    x = i * gx
+                    ax.axvline(x=x, color='blue', alpha=0.1, linestyle='-', linewidth=0.3)
+                
+                # Linhas horizontais
+                for i in range(R):
+                    y = i * gy
+                    ax.axhline(y=y, color='blue', alpha=0.1, linestyle='-', linewidth=0.3)
+                
+                # Pontos da grade (opcional)
+                pontos_grade_x = []
+                pontos_grade_y = []
+                for i in range(C):
+                    for j in range(R):
+                        pontos_grade_x.append(i * gx)
+                        pontos_grade_y.append(j * gy)
+                
+                ax.scatter(pontos_grade_x, pontos_grade_y, color='blue', s=2, alpha=0.1, 
+                        marker='+', zorder=1)
+            
+            # Configurações do gráfico
+            ax.set_xlabel('Comprimento (L)')
+            ax.set_ylabel('Largura (W)')
+            ax.set_title(titulo, fontsize=14, fontweight='bold')
+            ax.grid(True, alpha=0.2)
+            
+            # Remove legendas duplicadas e organiza a legenda
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax.legend(by_label.values(), by_label.keys(), loc='upper right', fontsize=9)
+            
+            # Calcula estatísticas
+            total_itens = len(seq)
+            area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
+            area_total = W * L
+            # utilizacao = (area_utilizada / area_total) * 100 if area_total > 0 else 0
+            
+            # Calcula comprimento utilizado
+            comprimento_utilizado = max(pos[0] for tipo, pos in seq) if seq else 0
+            for tipo, pos in seq:
+                if 0 <= tipo < len(T):
+                    poligono = T[tipo]
+                    if isinstance(poligono, Polygon):
+                        max_x_poligono = max(x for x, y in poligono.exterior.coords)
+                    else:
+                        max_x_poligono = max(x for x, y in poligono)
+                    comprimento_total = pos[0] + max_x_poligono
+                    if comprimento_total > comprimento_utilizado:
+                        comprimento_utilizado = comprimento_total
+            
+            # Adiciona informações detalhadas
+            info_text = f"""Malha: {W} × {L}
+    Resolução: {R} × {C}
+    Itens posicionados: {total_itens}
+    Tipos utilizados: {len(tipos_utilizados)}
+    Comprimento utilizado: {comprimento_utilizado:.1f}
+    Pontos DIFP: {len(pontos) if pontos else 0}"""
+            
+            ax.text(0.02, 0.98, info_text, transform=ax.transAxes, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.9),
+                fontsize=10, fontfamily='monospace')
+            
+            # Salva o gráfico se solicitado
+            if salvar_arquivo:
+                pasta = "instancias"
+                if not os.path.exists(pasta):
+                    os.makedirs(pasta)
+                caminho_completo = pasta+"/"+salvar_arquivo
+                plt.savefig(caminho_completo, dpi=300, bbox_inches='tight')
+                print(f"Gráfico do ISPP salvo em: {caminho_completo}")
+            if mostrar_plot:
+                plt.tight_layout()
+                plt.show()
+                
+            
+            return fig, ax
+            
+        except Exception as e:
+            print(f"Erro ao plotar resultado ISPP: {e}")
+            import traceback
+            traceback.print_exc()
+            return None, None
+    def _plotar_resultado_bpp(self, num_bins, seq, largura_bin, nome="resultado"):
+        """
+        Plota simples do resultado dos bins com as peças
+        """
+        try:
+            import matplotlib.pyplot as plt
+            import matplotlib.patches as patches
+            import numpy as np
+            import os
+            
+            # Configurar cores para diferentes modelos
+            cores_disponiveis = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF', '#5F27CD']
+            
+            # Mapear modelos para cores
+            modelos_unicos = set()
+            for bin in seq:
+                for item in bin:
+                    modelos_unicos.add(item)
+            
+            cor_por_modelo = {}
+            for i, modelo in enumerate(modelos_unicos):
+                cor_por_modelo[modelo] = cores_disponiveis[i % len(cores_disponiveis)]
+            
+            # Criar figura
+            fig, ax = plt.subplots(figsize=(12, 8))
+            
+            # Parâmetros de desenho
+            altura_bin = 1.0
+            espacamento_vertical = 1.5
+            margem = 0.5
+            
+            # Desenhar cada bin
+            for i, bin in enumerate(seq):
+                y = i * espacamento_vertical
+                
+                # Desenhar contorno do bin
+                rect = patches.Rectangle((0, y), largura_bin, altura_bin, 
+                                    linewidth=2, edgecolor='black', facecolor='none')
+                ax.add_patch(rect)
+                
+                # Adicionar itens no bin
+                x_atual = 0
+                soma_larguras = 0
+                
+                for item in bin:
+                    # Obter largura do item
+                    if item in self.modelos_roupas:
+                        largura_item = self.modelos_roupas[item].l
+                    else:
+                        largura_item = largura_bin * 0.1  # Fallback
+                    
+                    # Desenhar item
+                    cor = cor_por_modelo[item]
+                    item_rect = patches.Rectangle((x_atual, y), largura_item, altura_bin,
+                                                facecolor=cor, edgecolor='black', alpha=0.7)
+                    ax.add_patch(item_rect)
+                    
+                    # Adicionar texto do modelo se houver espaço
+                    if largura_item > largura_bin * 0.08:
+                        texto = item.split('_')[1] if '_' in item else item
+                        ax.text(x_atual + largura_item/2, y + altura_bin/2, texto,
+                            ha='center', va='center', fontsize=8, fontweight='bold')
+                    
+                    x_atual += largura_item
+                    soma_larguras += largura_item
+                
+                # Informações do bin
+                utilizacao = (soma_larguras / largura_bin) * 100
+                ax.text(largura_bin + 0.1, y + altura_bin/2, 
+                    f'{utilizacao:.1f}%', va='center', fontsize=9)
+                
+                # Número do bin
+                ax.text(-0.5, y + altura_bin/2, f'Bin {i+1}', 
+                    ha='right', va='center', fontweight='bold')
+            
+            # Configurar eixos
+            max_y = len(seq) * espacamento_vertical
+            ax.set_xlim(-2, largura_bin + 2)
+            ax.set_ylim(-1, max_y)
+            ax.set_xlabel('Largura')
+            ax.set_ylabel('Bins')
+            ax.set_title(f'Resultado - {num_bins} bins | Largura do bin: {largura_bin}')
+            
+            # Grade
+            ax.grid(True, alpha=0.3, axis='x')
+            
+            # Legenda
+            legend_elements = []
+            for modelo, cor in cor_por_modelo.items():
+                if modelo in self.modelos_roupas:
+                    largura = self.modelos_roupas[modelo].l
+                    nome_legenda = f"{modelo.split('_')[1]} ({largura:.1f})"
+                else:
+                    nome_legenda = modelo
+                legend_elements.append(patches.Patch(facecolor=cor, label=nome_legenda))
+            
+            ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.15, 1))
+            
+            # Ajustar layout
+            plt.tight_layout()
+            
+            # Salvar se necessário
+            if not os.path.exists("resultados"):
+                os.makedirs("resultados")
+            
+            caminho_imagem = os.path.join("resultados", f"{nome}_simple.png")
+            plt.savefig(caminho_imagem, dpi=200, bbox_inches='tight')
+            print(f"Plot simples salvo em: {caminho_imagem}")
+            
+            plt.show()
+            
+        except Exception as e:
+            print(f"Erro ao plotar resultado simples: {e}")
+            import traceback
+            traceback.print_exc()
+    # -----------------------------------------------------------------
+    def rodar(self, largura_bin):
+        self.largura_bin = largura_bin          #gambi
+        self._carregar_modelos_roupas()
+   
         # Pré Carregar os NFP e IFP das instancias e salvar
-        modificou_modelos = self._pre_processamento()           # carregar IFP e NFP
-        if modificou_modelos:
-            self._salvar_modelos_roupas()   
-
+        self._pre_processamento()           # carregar IFP e NFP
+   
         # ISPP para cada modelo de roupa
         for modelo_str, inst in self.modelos_roupas.items():
             inst:Instancia
             if inst.l == None:                              # se não tem a largura, calcula-a.
-                inst.l = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q)
-        self._salvar_modelos_roupas()                       # agora todos modelos tem sua largura. 
-        
+                print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP)
+                inst.l = larg
+                self._salvar_json_instancia(modelo_str,inst)                        
+                self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False)
+        # agora todos modelos tem sua largura.
         # BPP
-        resultado_bins = self.resolver_bpp(self.modelos_roupas,self.largura_bin)
-        self._salvar_resultado(resultado_bins)
-        # Finalizar
+        resultado_bins = self.resolver_bpp(self.modelos_roupas,self.largura_bin)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        num_bins, desperdicio, seq_corte, largura_bin, hist = resultado_bins
+        nome_instancias_bpp = ""
+        for modelo_str, inst in self.modelos_roupas.items():
+            nome_instancias_bpp += modelo_str+"_"
+        nome_instancias_bpp += f"-_n_bins={num_bins}"
+        self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_instancias_bpp)
+        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp)
+        # Finaliza
         pass
     # -----------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------
+    def _carregar_modelos_roupas(self,lista_nomes=None):
+        if lista_nomes==None:
+            lista_nomes=[]
+            for modelo_str, inst in self.modelos_roupas.items():
+                lista_nomes.append(modelo_str)
+
+        for nome in lista_nomes:
+            result = self._carregar_instancia(nome)
+            if result != None:
+                self.modelos_roupas[nome] = result
     def _pre_processamento(self) -> bool:                                #corrigir
         '''
         Carrega IFP e NFP das instancias
         '''
-        modificou_modelos_roupas = False
+        # modificou_modelos_roupas = False
         for modelo_str, inst in self.modelos_roupas.items():
             inst:Instancia
             if inst.IFP==None:
+                print(modelo_str,"está sem IFP. Calculando...")
                 inst.IFP = self._calcular_todos_IFP_D(inst.W,inst.L,inst.R,inst.C,inst.T)
-                modificou_modelos_roupas= True
+                self._salvar_json_instancia(modelo_str,inst)
+                # modificou_modelos_roupas=True
             if inst.NFP==None:
+                print(modelo_str,"está sem NFP. Calculando...")
                 inst.NFP = self._calcular_todos_NFP(inst.T) 
-                modificou_modelos_roupas= True
-        return modificou_modelos_roupas
-    def resolver_ispp(self,W,L,R,C,T:list,q:list):
+                self._salvar_json_instancia(modelo_str,inst)
+                # modificou_modelos_roupas=True
+        pass
+    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D):
         #verificar se é possível
         #verificar se é possível
         #verificar se é possível###############
-        modelo_ispp = Modelo_ISPP(W,L,R,C,T,q)
+        modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
         resultado_menor_faixa = modelo_ispp.rodar()
-        return resultado_menor_faixa
+        return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
     def resolver_bpp(self,modelos:dict, largura_bin:float):
         ######verificar se é possível
         L = -1
@@ -215,9 +657,9 @@ class Modelo:
         # ver se todos modelos tem mesma altura que retangulo[1]
         # ----------------------------------------
         modelo_bpp = Modelo_BPP(modelos,largura_bin)
-        resultado_brkga_bin = modelo_bpp.rodar()
+        resultado_brkga_bin = modelo_bpp.rodar()    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         # resultado_brkga_bin = modelo_bpp.evolve(num_geracoes=10000)
-        return resultado_brkga_bin
+        return resultado_brkga_bin                  # (num_bins, desperdicio, seq_corte,largura_bin, historico)
     # -----------------------------------------------------------------------------
     def _gerar_pontos_malha(self,W,L,R,C) -> dict:
         '''
@@ -262,7 +704,6 @@ class Modelo:
                     pontos_contidos.append((ponto_num,ponto_coords))
         
         return pontos_contidos
-
     def _calcular_IFP_D(self,W,L,R,C,conjunto_pontos,poligono_t:list):
         retangulo_malha = [(0,0),(L,0),(L,W),(0,W)]
         ifp_poligono = ifp_generator.calculate_ifp(retangulo_malha,poligono_t)
@@ -279,66 +720,10 @@ class Modelo:
     def _calcular_NFP(self,u:list, t:list):
         nfp = nfp_generator.calculate_nfp(Polygon(u),Polygon(t))
         return nfp
-
-
     def _calcular_todos_NFP(self,T):                         ###### implementar
         NFP = {}
         for u in range(len(T)):
             for t in range(len(T)):
                 NFP[u,t] = self._calcular_NFP(T[u],T[t])
         return NFP
-# ---------------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------------
-def escalar_poligono(poligono, escalar=1.0,arredondamento=7):
-    return [(round(escalar*x,arredondamento),round(escalar*y,arredondamento)) for x,y in poligono]    
-# ---------------------------------------------------------------------------------
-def instancia_marques(escala=1.0, multiplicador_demanda=1):
-    T_marques = [
-        [(0, 0), (21, 0), (21, 22), (14, 28), (7, 28), (0, 22)],
-
-        [(0, 5), (2, 0), (11, 2), (19, 0), (21, 5), (17, 4), (11, 6), (4, 4), (0, 5)],
-
-        [(0, 0), (33, 0), (33, 14), (30, 14), (26, 17), (13, 15), (0, 17)],
-
-        [(0, 0), (4, 0), (4, 39), (0, 39)],
-
-        [(0, 0), (10, 0), (10, 11), (0, 11)],
-
-        [(2, 20), (0, 18), (2, 10), (0, 2), (2, 0), (4, 10), (2, 20)],
-
-        [(0, 0), (29, 0), (27, 12), (29, 22), (25, 26), (25, 33),
-        (18, 37), (16, 35), (14, 35), (12, 37), (4, 34), (4, 26),
-        (0, 22), (2, 12)],
-
-        [(0, 0), (33, 0), (37, 6), (35, 13), (28, 13),
-        (25, 15), (14, 13), (0, 15)]
-    ]
-    T_escalado = []
-    for poligono in T_marques:
-        T_escalado.append(escalar_poligono(poligono,escala))
-    q = [2,2,1,1,2,2,1,1]
-    q_mult = [multiplicador_demanda*x for x in q]
-    return T_escalado, q_mult
-# ---------------------------------------------------------------------------------
-
-def main():
-    modelo = Modelo()
-    W=104
-    L=75
-    R=105
-    C=76
-    for escala in [0.9, 1.0, 1.06, 1.13]:
-        nome = f"marques_{escala}_{W}_{L}_{R}_{C}"
-        T,q = instancia_marques(escala)
-        modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,1)
-        pass
-    modelo.rodar()
-
-#rodar main
-main()
-
 # ---------------------------------------------------------------------------------
