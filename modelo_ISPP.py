@@ -39,7 +39,7 @@ class Modelo_ISPP:
         return True
     def _iniciar_brkga_ordem(self, pop_size=100,elite_frac=0.3,mutant_frac=0.4, generations=10):
         print("iniciando brkga-ordem, para achar a menor faixa, dados T, q e Malha.")
-        brkga_ordem = BRKGA_ordem(sum(self.q), self._rodar_BL,pop_size=pop_size,mutant_frac=mutant_frac,elite_frac=elite_frac,seed=42)
+        brkga_ordem = BRKGA_ordem(sum(self.q), self._rodar_BL,pop_size=pop_size,mutant_frac=mutant_frac,elite_frac=elite_frac,inheritance_prob=0.7,seed=42)
         brkga_resultado = brkga_ordem.evolve(self.q, gens=generations)
         return brkga_resultado      # (best_sequence, best_fitness, best_pecas_posicionadas )
     # Auxiliares ----------------------------------------------

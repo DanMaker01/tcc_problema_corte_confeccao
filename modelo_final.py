@@ -44,25 +44,27 @@ class Modelo:
                 print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
                 t0 = time.time()
                 seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP)
-                print(f"ISPP demorou {time.time()-t0} seg.")
+                t_total=time.time()-t0
                 inst.l = larg
                 self._salvar_json_instancia(modelo_str,inst)                        
-                self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False)
+                self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False,titulo=f"ISPP:{modelo_str}, tempo:{t_total}")
         # agora todos modelos tem sua largura.
         
         # BPP
         t0=time.time()
         # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=500000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-        print(f"BPP demorou {time.time()-t0} seg.")
+        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        t_total=time.time()-t0
         nome_instancias_bpp = ""
         str_Q = "Q"
         for modelo_str, inst in self.modelos_roupas.items():
             nome_instancias_bpp += modelo_str+"_"
             str_Q += f"_{str(inst.Q)}"
         nome_instancias_bpp += str_Q
+        print(f"BPP {nome_instancias_bpp}, tempo:{t_total}")
+        
         self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_instancias_bpp)
-        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp)
+        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp,titulo=f"BPP:{nome_instancias_bpp}, tempo:{t_total}")
         # Finaliza
         pass
     # -----------------------------------------------------------------------------
@@ -503,7 +505,7 @@ class Modelo:
             if comprimento_utilizado > 0:
                 ax.axvline(x=comprimento_utilizado, color='red', linestyle='--', 
                           linewidth=1.5, alpha=0.9, 
-                          label=f'Comprimento utilizado: {comprimento_utilizado:.1f}')
+                          label=f'Comprimento utilizado: {comprimento_utilizado:.3f}')
             
             # Configurações do gráfico
             ax.set_xlabel('Comprimento (L)')
@@ -527,13 +529,12 @@ class Modelo:
                 f"Resolução: {R} × {C}   |   "
                 f"Itens: {total_itens}   |   "
                 f"Tipos: {len(tipos_utilizados)}   |   "
-                f"Comprimento utilizado: {comprimento_utilizado:.1f}   |   "
-                f"Pontos DIFP: {len(pontos) if pontos else 0}"
+                f"Comprimento utilizado: {comprimento_utilizado:.3f}"
             )
 
             # Adiciona as informações logo abaixo do título
             ax.text(
-                0.5, 1.02, info_text,
+                0.5, 1.05, info_text,
                 transform=ax.transAxes,
                 ha='center', va='bottom',
                 fontsize=10, color='dimgray',
@@ -559,7 +560,7 @@ class Modelo:
             import traceback
             traceback.print_exc()
             return None, None    
-    def _plotar_resultado_bpp(self, num_bins, seq, largura_bin, nome="resultado"):
+    def _plotar_resultado_bpp(self, num_bins, seq, largura_bin,titulo="Resultado BPP", nome="resultado"):
         """
         Plota resultado dos bins com as peças
         """
@@ -662,7 +663,8 @@ class Modelo:
             ax.set_ylabel('Bins', fontsize=10)  # Fonte menor
             
             # Título com informações de desperdício
-            ax.set_title(f'Resultado - {num_bins} bins | Largura do bin: {largura_bin}\n'
+            ax.set_title(f'{titulo}\n' 
+                         f'Resultado - {num_bins} bins | Largura do bin: {largura_bin}\n'
                         f'Desperdício Total: {desperdicio_total:.1f}% | Área Desperdiçada: {area_desperdicada:.1f}', 
                         fontsize=11)  # Fonte um pouco menor
             
