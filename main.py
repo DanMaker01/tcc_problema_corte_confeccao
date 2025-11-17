@@ -39,8 +39,8 @@ def main():
     # ISPP
     W=104
     L=75
-    R=209
-    C=151
+    R=105
+    C=76
     # BPP
     modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
     Q = [4,4,8,8,4]
@@ -53,7 +53,8 @@ def main():
         nome = f"marques_{escala}_{W}_{L}_{R}_{C}"
         T,q = instancia_marques(escala)
         modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i]) ### não deveria ir Q aqui
-    modelo.rodar(largura_bin=largura_bin)       # rodar só os que estiverem neste dicionário
+    nome_conjunto = "marques_pp_p_m_g_gg"
+    modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto)       # rodar só os que estiverem neste dicionário
     # modelo.rodar(largura_bin=largura_bin)
 
 #rodar main

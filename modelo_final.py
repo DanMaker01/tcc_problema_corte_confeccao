@@ -32,18 +32,18 @@ class Modelo:
     def adicionar_modelo_demanda_Q(self,str_modelo, demanda_Q):     ######implementar
         pass
     # -----------------------------------------------------------------
-    def rodar(self, largura_bin):
+    def rodar(self, largura_bin,nome_conjunto):
         self.largura_bin = largura_bin          #gambi
         self._carregar_modelos_roupas()
         self._pre_processamento()           # carregar IFP e NFP
-   
+        
         # ISPP para cada modelo de roupa
         for modelo_str, inst in self.modelos_roupas.items():
             inst:Instancia
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP)
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
                 self._salvar_json_instancia(modelo_str,inst)                        
@@ -52,19 +52,14 @@ class Modelo:
         
         # BPP
         t0=time.time()
-        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # RODAR RAPIDO
+        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         t_total=time.time()-t0
-        nome_instancias_bpp = ""
-        str_Q = "Q"
-        for modelo_str, inst in self.modelos_roupas.items():
-            nome_instancias_bpp += modelo_str+"_"
-            str_Q += f"_{str(inst.Q)}"
-        nome_instancias_bpp += str_Q
-        print(f"BPP {nome_instancias_bpp}, tempo:{t_total}")
         
-        self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_instancias_bpp)
-        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_instancias_bpp,titulo=f"BPP:{nome_instancias_bpp}, tempo:{t_total}")
+        print(f"BPP {nome_conjunto}, tempo:{t_total}")
+        
+        self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_conjunto)
+        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
         # Finaliza
         pass
     # -----------------------------------------------------------------------------
@@ -96,12 +91,11 @@ class Modelo:
                 self._salvar_json_instancia(modelo_str,inst)
                 # modificou_modelos_roupas=True
         pass
-    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D):
-        #verificar se é possível
+    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D,gens=10):
         #verificar se é possível
         #verificar se é possível###############
         modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
-        resultado_menor_faixa = modelo_ispp.rodar()
+        resultado_menor_faixa = modelo_ispp.rodar(gens=gens)
         return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
     def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000):
         ######verificar se é possível
@@ -554,7 +548,6 @@ class Modelo:
                 plt.show()
 
             return fig, ax
-            
         except Exception as e:
             print(f"Erro ao plotar resultado ISPP: {e}")
             import traceback
