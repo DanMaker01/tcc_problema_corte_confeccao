@@ -59,7 +59,19 @@ def main():
     modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto)       # rodar só os que estiverem neste dicionário
     # modelo.rodar(largura_bin=largura_bin)
 
+def debug():
+    from modelo_ISPP import Modelo_ISPP
+
+    W=104
+    L=75
+    R=105
+    C=76
+    T,q = instancia_marques()
+
+    modelo_ispp = Modelo_ISPP(W,L,R,C,)  
+
 #rodar main
 main()
+debug()
 
 # ---------------------------------------------------------------------------------

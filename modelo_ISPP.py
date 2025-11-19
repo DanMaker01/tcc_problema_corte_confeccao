@@ -89,7 +89,7 @@ class Modelo_ISPP:
             #     return max(pos[1][0] for pos in pecas_posicionadas)
             return 9e9
 
-    def _rodar_BL(self,seq) -> float:   ### implementar
+    def _rodar_BL(self,seq) -> float:   #
         resolvida = self.sequencias_resolvidas.get(tuple(seq))   #se já foi resolvido antes, adianta tempo
         if resolvida != None:
             largura_ja_existente, pecas_posicionadas = resolvida
