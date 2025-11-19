@@ -43,7 +43,7 @@ class Modelo:
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=4)       # rodar ISPP 10 gerações
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
                 self._salvar_json_instancia(modelo_str,inst)                        
@@ -52,8 +52,8 @@ class Modelo:
         
         # BPP
         t0=time.time()
-        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # RODAR RAPIDO
-        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # RODAR RAPIDO
+        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         t_total=time.time()-t0
         
         print(f"BPP {nome_conjunto}, tempo:{t_total}")
