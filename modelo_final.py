@@ -43,7 +43,8 @@ class Modelo:
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10)       # rodar ISPP 10 gerações
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
+                # seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
                 self._salvar_json_instancia(modelo_str,inst)                        
@@ -91,13 +92,13 @@ class Modelo:
                 self._salvar_json_instancia(modelo_str,inst)
                 # modificou_modelos_roupas=True
         pass
-    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D,gens=10):
+    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D,gens=10,seed=42):
         #verificar se é possível
         #verificar se é possível###############
         modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
-        resultado_menor_faixa = modelo_ispp.rodar(gens=gens)
+        resultado_menor_faixa = modelo_ispp.rodar(gens=gens,seed=seed)
         return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
-    def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000):
+    def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000,seed=42):
         ######verificar se é possível
         L = -1
         for modelo_str, instancia in modelos.items():
@@ -109,7 +110,7 @@ class Modelo:
         # ver se todos modelos tem mesma altura que retangulo[1]
         # ----------------------------------------
         modelo_bpp = Modelo_BPP(modelos,largura_bin)
-        resultado_brkga_bin = modelo_bpp.rodar(gens=gens)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        resultado_brkga_bin = modelo_bpp.rodar(gens=gens,seed=seed)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         # resultado_brkga_bin = modelo_bpp.evolve(num_geracoes=10000)
         return resultado_brkga_bin                  # (num_bins, desperdicio, seq_corte,largura_bin, historico)
     # -----------------------------------------------------------------------------

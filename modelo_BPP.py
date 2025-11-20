@@ -25,11 +25,11 @@ class Modelo_BPP:
             return True
         
 
-    def rodar(self,gens=100000):
-        brkga_resultado_bins = self._iniciar_brkga_bins(generations=gens)  #diminuindo para testes em casa
+    def rodar(self,gens=100000,seed=42):
+        brkga_resultado_bins = self._iniciar_brkga_bins(generations=gens,seed=seed)  #diminuindo para testes em casa
         return brkga_resultado_bins         # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         
-    def _iniciar_brkga_bins(self,pop_size=100,elite_frac=0.3,mutant_frac=0.4,generations=100000):
+    def _iniciar_brkga_bins(self,pop_size=100,elite_frac=0.3,mutant_frac=0.4,generations=100000,seed=42):
         print(f"iniciando brkga-bins, para achar o menor numero de bins dada a demanda Q e larguras das faixas l. gens={generations}")
         # monta
         larg_itens = {}
@@ -39,7 +39,7 @@ class Modelo_BPP:
             larg_itens[str_modelo] = inst.l
             demanda[str_modelo]   = inst.Q
         # roda
-        brkga_bins = BRKGA_bins(larg_itens,demanda,self.largura_bin,pop_size=pop_size,elite_frac=elite_frac,mutant_frac=mutant_frac,seed=42)
+        brkga_bins = BRKGA_bins(larg_itens,demanda,self.largura_bin,pop_size=pop_size,elite_frac=elite_frac,mutant_frac=mutant_frac,seed=seed)
         brkga_resultado = brkga_bins.evolve(num_geracoes=generations)
         brkga_resultado = (brkga_resultado[0],brkga_resultado[1],brkga_resultado[2],self.largura_bin,brkga_resultado[3] )
         return brkga_resultado          # (num_bins, desperdicio, seq_corte,largura_bin, historico)

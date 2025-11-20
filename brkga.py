@@ -51,9 +51,7 @@ class BRKGA_ordem:
             sequence_indexes = self.decode(chrom)
             sequence = [demanda_sequenciada[i] for i in sequence_indexes]
             fitness,pecas_posicionadas = self.fitness_func(sequence)   #roda o BL em si
-            # if i % 10 == 0:
-            #     print(f"{i+1}/{total} fit:{fitness} seq:{sequence} pecas_pos:{str(pecas_posicionadas)}")
-            
+
             # Penaliza fitness inválidos em vez de reinicializar tudo
             if not np.isfinite(fitness):
                 fitness = 1e9
@@ -126,19 +124,6 @@ class BRKGA_ordem:
             # print(f"Peças posicionadas: {str(self.best_pecas_posicionadas)}")
 
         return self.best_sequence, self.best_fitness, self.best_pecas_posicionadas
-
-    def create_initial_solution(self, method: str = "random") -> Tuple[List[int], float]:
-        """Gera uma solução inicial (útil para comparar com o BRKGA)."""
-        if method == "sorted":
-            sequence = list(range(self.n))
-        elif method == "greedy":
-            # Placeholder: aqui pode entrar um heurístico real
-            sequence = random.sample(range(self.n), self.n)
-        else:
-            sequence = random.sample(range(self.n), self.n)
-
-        fitness = self.fitness_func(sequence)
-        return sequence, fitness
 
 # ---------------------------------------------------------------------------------
 class BRKGA_bins:
