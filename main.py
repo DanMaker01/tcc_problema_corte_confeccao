@@ -34,31 +34,6 @@ def instancia_marques(escala=1.0, multiplicador_demanda=1):
     return T_escalado, q_mult
 # ---------------------------------------------------------------------------------
 
-def main():
-    modelo = Modelo()
-    # ISPP
-    W=104
-    L=75
-    R=105   
-    C=76
-    # BPP
-    # modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
-    # Q = [4,4,8,8,4]
-    # modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
-    # Q = [1, 1, 1, 1, 1]
-    modelos_tamanhos = [1.0]
-    Q = [1]
-    largura_bin = 110
-    #
-
-    for i,escala in enumerate(modelos_tamanhos):
-        nome = f"TESTE_marques_{escala}_{W}_{L}_{R}_{C}_teste_melhor_sequencia_tam_M"
-        T,q = instancia_marques(escala)
-        modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i]) ### não deveria ir Q aqui
-    nome_conjunto = "marques_pp_p_m_g_gg"
-    modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto)       # rodar só os que estiverem neste dicionário
-    # modelo.rodar(largura_bin=largura_bin)
-
 def debug():
     from bl import Bottom_Left
     from shapely.geometry import Polygon, Point
@@ -420,12 +395,41 @@ def debug():
         largura = medir_largura_faixa_BL(T,res)
         print(f"malha:{W},{L},{R},{C}, largura:{largura}")
 
-        plotar_ispp(W,L,R,C,T,res,titulo=f"largura:{largura}",mostrar_plot=False,salvar_arquivo=f"ispp_malha_{W}_{L}_{R}_{C}.png")
+        # plotar_ispp(W,L,R,C,T,res,titulo=f"largura:{largura}",mostrar_plot=False,salvar_arquivo=f"ispp_malha_{W}_{L}_{R}_{C}.png")
         
-    
+def rodar_robustez():
+    modelo = Modelo()
+    # ISPP
+    W=104
+    L=75
+    R=105   
+    C=76
+    modelos_tamanhos = [1.0]
+    Q = [1]
+    #
+    lista_seeds = range(100)
 
-#rodar main
-# main()
-debug()
+    for seed_atual in lista_seeds:
+        largura_bin = 110
+        for i,escala in enumerate(modelos_tamanhos):
+            nome = f"seed_{seed_atual}_marques_{escala}_{W}_{L}_{R}_{C}"
+            T,q = instancia_marques(escala)
+            modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i]) ### não deveria ir Q aqui, tem que reformular pra salvar as instancias, escolher quais vai usar e mandar rodar o PCME
+        nome_conjunto = f"seed_{seed_atual}_marques_pp_p_m_g_gg"
+        modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto,seed=seed_atual)       # rodar só os que estiverem neste dicionário
+    # modelo.rodar(largura_bin=largura_bin)
+
 
 # ---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+# rodar método principal
+# ---------------------------------------------------------------------------------
+def main():
+    rodar_robustez()
+    pass
+
+# ---------------------------------------------------------------------------------
+main()
+# ---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+

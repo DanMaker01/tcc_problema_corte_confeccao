@@ -32,7 +32,7 @@ class Modelo:
     def adicionar_modelo_demanda_Q(self,str_modelo, demanda_Q):     ######implementar
         pass
     # -----------------------------------------------------------------
-    def rodar(self, largura_bin,nome_conjunto):
+    def rodar(self, largura_bin,nome_conjunto,seed=42):
         self.largura_bin = largura_bin          #gambi
         self._carregar_modelos_roupas()
         self._pre_processamento()           # carregar IFP e NFP
@@ -43,24 +43,30 @@ class Modelo:
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=seed)       # rodar ISPP 10 gerações
                 # seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
                 self._salvar_json_instancia(modelo_str,inst)                        
-                self._plotar_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,pecas_posicionadas,salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",mostrar_plot=False,titulo=f"ISPP:{modelo_str}, tempo:{t_total}")
+                self._plotar_ispp(
+                    inst.W, inst.L, inst.R, inst.C, inst.T, pecas_posicionadas,
+                    salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",
+                    mostrar_plot=False,
+                    titulo=f"ISPP:{modelo_str}, tempo:{t_total:.0f}"
+                )
+
         # agora todos modelos tem sua largura.
         
         # BPP
         t0=time.time()
-        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=1000)    # RODAR RAPIDO
-        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100)    # RODAR RAPIDO
+        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000,seed=seed)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         t_total=time.time()-t0
         
         print(f"BPP {nome_conjunto}, tempo:{t_total}")
         
         self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_conjunto)
-        self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
+        # self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
         # Finaliza
         pass
     # -----------------------------------------------------------------------------
@@ -509,9 +515,22 @@ class Modelo:
             ax.grid(True, alpha=0.2)
 
             # Remove legendas duplicadas e organiza a legenda
+            # Remove duplicatas da legenda
             handles, labels = ax.get_legend_handles_labels()
             by_label = dict(zip(labels, handles))
-            ax.legend(by_label.values(), by_label.keys(), loc='upper right', fontsize=9)
+
+            # Legenda pequena, ao lado, fora do gráfico (não sobrepõe as peças)
+            ax.legend(
+                by_label.values(),
+                by_label.keys(),
+                loc='center left',
+                bbox_to_anchor=(1.02, 0.5),   # desloca legenda para fora
+                borderaxespad=0,
+                fontsize=8,
+                frameon=True,
+                title="Tipos",
+                title_fontsize=9
+            )
 
             # Calcula estatísticas
             total_itens = len(seq)
