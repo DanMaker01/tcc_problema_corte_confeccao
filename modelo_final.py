@@ -32,7 +32,7 @@ class Modelo:
     def adicionar_modelo_demanda_Q(self,str_modelo, demanda_Q):     ######implementar
         pass
     # -----------------------------------------------------------------
-    def rodar(self, largura_bin,nome_conjunto,seed=42):
+    def rodar(self, largura_bin,nome_conjunto,geracoes=10,seed=42, pares_inclusos=False):
         self.largura_bin = largura_bin          #gambi
         self._carregar_modelos_roupas()
         self._pre_processamento()           # carregar IFP e NFP
@@ -41,9 +41,9 @@ class Modelo:
         for modelo_str, inst in self.modelos_roupas.items():
             inst:Instancia
             if inst.l == None:                              # se não tem a largura, calcula-a.
-                print("largura não calculada. resolvendo ISPP para a o modelo",modelo_str)
+                print("largura não calculada.\nResolvendo ISPP para a o modelo:",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=seed)       # rodar ISPP 10 gerações
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=geracoes,seed=seed)       # rodar ISPP 10 gerações
                 # seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
@@ -58,16 +58,29 @@ class Modelo:
         # agora todos modelos tem sua largura.
         
         # BPP
-        t0=time.time()
-        num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100)    # RODAR RAPIDO
-        # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000,seed=seed)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
-        t_total=time.time()-t0
-        
-        print(f"BPP {nome_conjunto}, tempo:{t_total}")
-        
-        self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_conjunto)
-        # self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
-        # Finaliza
+        if pares_inclusos:
+            print("\n >>>>>> PARES INCLUSOS!!\n")
+            print("rodando o PCME diferenciado para lidar com pares")
+            t0=time.time()
+            num_bins, desperdicio,seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas, self.largura_bin, gens=100000,pares_inclusos=pares_inclusos)
+            t_total=time.time()-t0
+
+            #lógica para lidar com pares, bpp deve ser um pouco diferente 
+            # Os modelos com demanda 0 são pares
+            # Dada a sequencia pelo BRKGA, na hora de posicionar:
+                # talvez vale ser ganancioso, usar sempre pares, já que vão ser iguais ou melhores. Perde mtas soluções?
+            pass 
+        else:
+            t0=time.time()
+            num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100)    # RODAR RAPIDO
+            # num_bins, desperdicio, seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas,self.largura_bin,gens=100000,seed=seed)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+            t_total=time.time()-t0
+            
+            print(f"BPP {nome_conjunto}, tempo:{t_total}")
+            
+            self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_conjunto)
+            # self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
+            # Finaliza
         pass
     # -----------------------------------------------------------------------------
     def _carregar_modelos_roupas(self,lista_nomes=None):            ###### está sobrepondo as instancias dadas pelo usuário sempre
@@ -104,7 +117,7 @@ class Modelo:
         modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
         resultado_menor_faixa = modelo_ispp.rodar(gens=gens,seed=seed)
         return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
-    def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000,seed=42):
+    def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000,seed=42,pares_inclusos=False):
         ######verificar se é possível
         L = -1
         for modelo_str, instancia in modelos.items():
@@ -116,7 +129,7 @@ class Modelo:
         # ver se todos modelos tem mesma altura que retangulo[1]
         # ----------------------------------------
         modelo_bpp = Modelo_BPP(modelos,largura_bin)
-        resultado_brkga_bin = modelo_bpp.rodar(gens=gens,seed=seed)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
+        resultado_brkga_bin = modelo_bpp.rodar(gens=gens,seed=seed,pares_inclusos=pares_inclusos)    # (num_bins, desperdicio, seq_corte,largura_bin, historico)
         # resultado_brkga_bin = modelo_bpp.evolve(num_geracoes=10000)
         return resultado_brkga_bin                  # (num_bins, desperdicio, seq_corte,largura_bin, historico)
     # -----------------------------------------------------------------------------
@@ -308,7 +321,7 @@ class Modelo:
             with open(caminho_arquivo, 'w', encoding='utf-8') as f:
                 json.dump(resultado_serializavel, f, indent=2, ensure_ascii=False)
             
-            print(f"Resultado salvo com sucesso em {caminho_arquivo}")
+            print(f"Resultado PCME salvo com sucesso em {caminho_arquivo}")
             print(f"Bins: {num_bins}, Desperdício: {desperdicio:.2f}, Utilização: {resultado_completo['parametros']['taxa_utilizacao']:.1%}")
             
             return resultado_completo
@@ -323,66 +336,44 @@ class Modelo:
             self._salvar_json_instancia(modelo_str,instancia)
         pass
     # -----------------------------------------------------------------
+    
     def _plotar_ispp(self, W, L, R, C, T, seq, pontos=None, titulo="Resultado do ISPP", 
                     mostrar_grade=True, mostrar_numeros=True, mostrar_pontos_difp=False,
                     salvar_arquivo=None, mostrar_plot=True):
         """
         Plota o resultado do ISPP (Irregular Strip Packing Problem)
-        
-        Args:
-            W: Largura da faixa
-            L: Comprimento da faixa
-            R: Número de linhas da grade
-            C: Número de colunas da grade
-            T: Lista de polígonos dos tipos
-            seq: Sequência de posicionamento [(tipo, (x,y)), ...]
-            pontos: Lista de pontos DIFP disponíveis (opcional)
-            titulo: Título do gráfico
-            mostrar_grade: Se True, mostra a grade da malha
-            mostrar_numeros: Se True, mostra números dos itens na sequência
-            mostrar_pontos_difp: Se True, mostra os pontos DIFP em fundo
-            salvar_arquivo: Caminho para salvar o gráfico
         """
         try:
             import matplotlib.pyplot as plt
             import matplotlib.patches as patches
             from shapely.geometry import Polygon
+            import os
             
             fig, ax = plt.subplots(figsize=(14, 10))
             
-            # Configura limites do gráfico
             ax.set_xlim(0, L)
             ax.set_ylim(0, W)
             ax.set_aspect('equal')
             
-            # Desenha o retângulo da área útil
             retangulo = patches.Rectangle((0, 0), L, W, 
                                         linewidth=2, edgecolor='black', 
                                         facecolor='lightgray', alpha=0.2)
             ax.add_patch(retangulo)
             
-            # Cores para diferentes tipos de polígonos
             cores = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 
                     'pink', 'gray', 'olive', 'cyan', 'magenta', 'yellow',
                     'navy', 'teal', 'coral', 'indigo']
             
-            # Dicionário para contar ocorrências de cada tipo e controle de legenda
             contador_tipos = {}
             tipos_utilizados = set()
             
-            # Função auxiliar para transladar polígono
             def _transladar_poligono(poligono, ponto):
-                """Translada um polígono para uma posição específica"""
                 if isinstance(poligono, Polygon):
-                    # Para objetos Polygon do shapely
                     return Polygon([(x + ponto[0], y + ponto[1]) for x, y in poligono.exterior.coords])
                 else:
-                    # Para lista de vértices
                     return [(x + ponto[0], y + ponto[1]) for x, y in poligono]
             
-            # Função auxiliar para calcular área utilizada
             def _calcular_area_utilizada_sequencia(T, sequencia):
-                """Calcula a área total utilizada pela sequência"""
                 area_total = 0.0
                 for tipo, posicao in sequencia:
                     if 0 <= tipo < len(T):
@@ -390,42 +381,28 @@ class Modelo:
                         if isinstance(poligono, Polygon):
                             area_total += poligono.area
                         else:
-                            # Calcula área manualmente para lista de vértices
                             poly = Polygon(poligono)
                             area_total += poly.area
                 return area_total
             
-            # Plota cada polígono posicionado da sequência
+            # Plota todos os itens
             for i, (tipo, posicao) in enumerate(seq):
-                # Verifica se o tipo é válido
                 if 0 <= tipo < len(T):
-                    # Obtém o polígono original do tipo
                     poligono_original = T[tipo]
-                    
-                    # Translada o polígono para a posição especificada
                     poligono_posicionado = _transladar_poligono(poligono_original, posicao)
                     
-                    # Conta ocorrências do tipo
-                    if tipo not in contador_tipos:
-                        contador_tipos[tipo] = 0
-                    contador_tipos[tipo] += 1
+                    contador_tipos[tipo] = contador_tipos.get(tipo, 0) + 1
                     tipos_utilizados.add(tipo)
-                    
-                    # Cor baseada no tipo
                     cor = cores[tipo % len(cores)]
                     
-                    # Extrai coordenadas do polígono posicionado
                     if isinstance(poligono_posicionado, Polygon):
                         x, y = poligono_posicionado.exterior.xy
                     else:
-                        # Se for lista de vértices
                         x = [p[0] for p in poligono_posicionado]
                         y = [p[1] for p in poligono_posicionado]
                     
-                    # Label para legenda (apenas na primeira ocorrência de cada tipo)
                     label = f'Tipo {tipo}' if contador_tipos[tipo] == 1 else ""
                     
-                    # Plota o polígono posicionado
                     patch = patches.Polygon(list(zip(x, y)), 
                                         closed=True, 
                                         edgecolor=cor, 
@@ -435,118 +412,76 @@ class Modelo:
                                         label=label)
                     ax.add_patch(patch)
                     
-                    # # Marca o ponto de posicionamento (referência)
-                    # ax.scatter([posicao[0]], [posicao[1]], 
-                    #         color='black', s=40, zorder=10, marker='x', linewidth=2)
-                    
-                    # Adiciona número da sequência no centroide do polígono
                     if mostrar_numeros:
                         if isinstance(poligono_posicionado, Polygon):
                             centroid = poligono_posicionado.centroid
-                            centroid_x, centroid_y = centroid.x, centroid.y
+                            cx, cy = centroid.x, centroid.y
                         else:
-                            # Calcula centroide manualmente para lista de vértices
-                            centroid_x = sum(x) / len(x)
-                            centroid_y = sum(y) / len(y)
+                            cx = sum(x)/len(x)
+                            cy = sum(y)/len(y)
                         
-                        ax.text(centroid_x, centroid_y, str(i+1), 
+                        ax.text(cx, cy, str(i+1), 
                             fontsize=9, fontweight='bold',
                             ha='center', va='center',
                             bbox=dict(boxstyle='circle', facecolor='white', alpha=0.9),
                             zorder=15)
             
-            # Plota os pontos DIFP disponíveis em fundo (opcional) #####retirar
+            # Opcional: pontos DIFP
             if mostrar_pontos_difp and pontos:
                 x_vals = [p[0] for p in pontos]
                 y_vals = [p[1] for p in pontos]
                 ax.scatter(x_vals, y_vals, color='gray', s=6, alpha=0.2, 
                         zorder=1, label=f'Pontos DIFP ({len(pontos)})')
             
-            # Desenha a grade da malha se solicitado
+            # Grade da malha
             if mostrar_grade:
-                # Calcula espaçamento da grade
                 gx = L / (C - 1) if C > 1 else L
                 gy = W / (R - 1) if R > 1 else W
                 
-                # Linhas verticais
                 for i in range(C):
-                    x = i * gx
-                    ax.axvline(x=x, color='blue', alpha=0.1, linestyle='-', linewidth=0.3)
-                
-                # Linhas horizontais
+                    ax.axvline(x=i*gx, color='blue', alpha=0.1, linewidth=0.3)
                 for i in range(R):
-                    y = i * gy
-                    ax.axhline(y=y, color='blue', alpha=0.1, linestyle='-', linewidth=0.3)
+                    ax.axhline(y=i*gy, color='blue', alpha=0.1, linewidth=0.3)
                 
-                # Pontos da grade (opcional)
-                pontos_grade_x = []
-                pontos_grade_y = []
-                for i in range(C):
-                    for j in range(R):
-                        pontos_grade_x.append(i * gx)
-                        pontos_grade_y.append(j * gy)
-                
-                ax.scatter(pontos_grade_x, pontos_grade_y, color='blue', s=2, alpha=0.1, 
-                        marker='+', zorder=1)
+                grid_x = [i*gx for i in range(C) for _ in range(R)]
+                grid_y = [j*gy for _ in range(C) for j in range(R)]
+                ax.scatter(grid_x, grid_y, color='blue', s=2, alpha=0.1, marker='+', zorder=1)
             
-            # Calcula comprimento utilizado
+            # ---- CÁLCULO DO COMPRIMENTO UTILIZADO ----
             comprimento_utilizado = 0
             for tipo, pos in seq:
                 if 0 <= tipo < len(T):
                     poligono = T[tipo]
                     if isinstance(poligono, Polygon):
-                        max_x_poligono = max(x for x, y in poligono.exterior.coords)
+                        max_x = max(x for x, y in poligono.exterior.coords)
                     else:
-                        max_x_poligono = max(x for x, y in poligono)
-                    comprimento_total = pos[0] + max_x_poligono
-                    if comprimento_total > comprimento_utilizado:
-                        comprimento_utilizado = comprimento_total
+                        max_x = max(x for x, y in poligono)
+                    comprimento_utilizado = max(comprimento_utilizado, pos[0] + max_x)
             
-            # Linha vertical pontilhada para mostrar a largura
             if comprimento_utilizado > 0:
                 ax.axvline(x=comprimento_utilizado, color='red', linestyle='--', 
-                          linewidth=1.5, alpha=0.9, 
-                          label=f'Comprimento utilizado: {comprimento_utilizado:.3f}')
+                          linewidth=1.5, alpha=0.9)
             
-            # Configurações do gráfico
-            ax.set_xlabel('Comprimento (L)')
-            ax.set_ylabel('Largura (W)')
-            ax.set_title(titulo, fontsize=14, fontweight='bold')
-            ax.grid(True, alpha=0.2)
-
-            # Remove legendas duplicadas e organiza a legenda
-            # Remove duplicatas da legenda
-            handles, labels = ax.get_legend_handles_labels()
-            by_label = dict(zip(labels, handles))
-
-            # Legenda pequena, ao lado, fora do gráfico (não sobrepõe as peças)
-            ax.legend(
-                by_label.values(),
-                by_label.keys(),
-                loc='center left',
-                bbox_to_anchor=(1.02, 0.5),   # desloca legenda para fora
-                borderaxespad=0,
-                fontsize=8,
-                frameon=True,
-                title="Tipos",
-                title_fontsize=9
-            )
-
-            # Calcula estatísticas
+            # ---- ESTATÍSTICAS E ÁREAS ----
             total_itens = len(seq)
             area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
-            area_total = W * L
+            
+            area_retangulo_util = W * comprimento_utilizado
+            area_desperdicada = area_retangulo_util - area_utilizada
+            
+            # ----  TEXTO INFORMATIVO ----
+            perc_area = (area_utilizada / area_retangulo_util) * 100 if area_retangulo_util > 0 else 0
+            perc_comp = (comprimento_utilizado / L) * 100 if L > 0 else 0
 
-            # Texto informativo (sem bbox)
             info_text = (
                 f"Malha: {W} × {L}   |   "
                 f"Resolução: {R} × {C}   |   "
                 f"Itens: {total_itens}   |   "
-                f"Tipos: {len(tipos_utilizados)}   |   "
-                f"Comprimento utilizado: {comprimento_utilizado:.3f}"
+                f"Área: {area_utilizada:.1f}/{area_retangulo_util:.1f} ({perc_area:.1f}%)   |   "
+                f"Comprimento necessário: {comprimento_utilizado:.1f}/{L:.1f} ({perc_comp:.1f}%)"
             )
 
-            # Adiciona as informações logo abaixo do título
+            
             ax.text(
                 0.5, 1.05, info_text,
                 transform=ax.transAxes,
@@ -554,25 +489,45 @@ class Modelo:
                 fontsize=10, color='dimgray',
             )
 
-            # Salva o gráfico se solicitado
+            # Legenda
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+
+            ax.legend(
+                by_label.values(), by_label.keys(),
+                loc='center left',
+                bbox_to_anchor=(1.02, 0.5),
+                fontsize=8,
+                frameon=True,
+                title="Tipos", title_fontsize=9
+            )
+            
+            ax.set_title(titulo, fontsize=14, fontweight='bold')
+            ax.set_xlabel('Comprimento (L)')
+            ax.set_ylabel('Largura (W)')
+            ax.grid(True, alpha=0.2)
+
             if salvar_arquivo:
                 pasta = "instancias"
                 if not os.path.exists(pasta):
                     os.makedirs(pasta)
-                caminho_completo = pasta + "/" + salvar_arquivo
-                plt.savefig(caminho_completo, dpi=300, bbox_inches='tight')
-                print(f"Gráfico do ISPP salvo em: {caminho_completo}")
+                caminho = pasta + "/" + salvar_arquivo
+                plt.savefig(caminho, dpi=300, bbox_inches='tight')
+                print(f"Gráfico do ISPP salvo em: {caminho}")
 
             if mostrar_plot:
                 plt.tight_layout()
                 plt.show()
 
             return fig, ax
+        
         except Exception as e:
             print(f"Erro ao plotar resultado ISPP: {e}")
             import traceback
             traceback.print_exc()
-            return None, None    
+            return None, None
+
+    
     def _plotar_resultado_bpp(self, num_bins, seq, largura_bin,titulo="Resultado BPP", nome="resultado"):
         """
         Plota resultado dos bins com as peças

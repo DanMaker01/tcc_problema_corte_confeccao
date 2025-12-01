@@ -127,26 +127,28 @@ class BRKGA_ordem:
 
 # ---------------------------------------------------------------------------------
 class BRKGA_bins:
-    def __init__(self, tamanhos_itens, demanda, capacidade_bin, pop_size=100, elite_frac=0.2, 
-                 mutant_frac=0.4, prob_heranca=0.6, seed=None):
+    def __init__(self, tamanhos_itens, demanda_Q, capacidade_bin, pop_size=100, elite_frac=0.2, 
+                 mutant_frac=0.4, prob_heranca=0.6, seed=None,pares_inclusos=False):
         """
         Args:
-            tamanhos_itens: dicionário {tamanho: quantidade, ...} 
+            tamanhos_itens: dicionário {tamanho: largura, ...} 
                 Ex: {0.94: 51.2, 1.00: 55.865, ...}
             demanda: dicionário {tamanho: quantidade_inteira, ...}
                 Ex: {0.94: 10, 1.00: 15, ...}
             capacidade_bin: capacidade máxima de cada bin
         """
+        self.pares_inclusos = pares_inclusos
+        
         if seed is not None:
             np.random.seed(seed)
             random.seed(seed)
         
         self.tamanhos_itens = tamanhos_itens
-        self.demanda = demanda
+        self.demanda_Q = demanda_Q
         self.capacidade_bin = capacidade_bin
         
         # Calcular tamanho do indivíduo (total de itens)
-        self.n = sum(demanda.values())
+        self.n = sum(demanda_Q.values())
         
         self.pop_size = pop_size
         self.prob_heranca = prob_heranca
@@ -161,11 +163,11 @@ class BRKGA_bins:
         """Gera um vetor de R^n onde cada componente pertence à [0,1]"""
         return [random.random() for _ in range(self.n)]
     
-    def decode(self, individual):
+    def decode(self, individual): #!
         """Decodifica um indivíduo em uma solução de bin packing"""
         # Monta uma lista fixa com a demanda usando os tamanhos reais
         itens_ordenados = []
-        for tamanho_tipo, qtd in self.demanda.items():
+        for tamanho_tipo, qtd in self.demanda_Q.items():
             # Repete cada tamanho pela quantidade demandada
             itens_ordenados.extend([tamanho_tipo] * qtd)
 
@@ -176,25 +178,58 @@ class BRKGA_bins:
         # Sequência de itens na ordem dos genes ordenados
         sequencia_ordenada = [itens_ordenados[i] for i in indices_ordenados]
 
-        # Divide a sequência em bins
+        # Divide a sequência em bins -------------------------
         bins = []
         bin_atual = []
         soma_atual = 0.0
 
-        for i, tamanho_tipo in enumerate(sequencia_ordenada):
-            largura_tamanho_tipo = self.tamanhos_itens[tamanho_tipo]
-            if soma_atual + largura_tamanho_tipo <= self.capacidade_bin:
-                bin_atual.append((i, tamanho_tipo))
-                soma_atual += largura_tamanho_tipo
-            else:
+        if self.pares_inclusos: ########## TESTAR AQUI OS PARES
+            i = 0
+            n = len(sequencia_ordenada)
+
+            while i < n:
+                idx1 = i
+                t1 = sequencia_ordenada[i]
+
+                # Tenta pegar o segundo item do par
+                if i + 1 < n:
+                    idx2 = i + 1
+                    t2 = sequencia_ordenada[i + 1]
+                    largura_par = self.largura_par(t1, t2)   # <-- você define essa função
+                    par = [(idx1, t1), (idx2, t2)]
+                    i += 2
+                else:
+                    # Só sobrou um item -> par unitário
+                    largura_par = self.tamanhos_itens[t1]
+                    par = [(idx1, t1)]
+                    i += 1
+
+                # Empacotamento considerando largura do par
+                if soma_atual + largura_par <= self.capacidade_bin:
+                    bin_atual.append(par)
+                    soma_atual += largura_par
+                else:
+                    bins.append(bin_atual)
+                    bin_atual = [par]
+                    soma_atual = largura_par
+
+            if bin_atual:
                 bins.append(bin_atual)
-                bin_atual = [(i, tamanho_tipo)]
-                soma_atual = largura_tamanho_tipo
 
-        if bin_atual:
-            bins.append(bin_atual)
-
-        return bins
+            return bins
+        else:
+            for i, tamanho_tipo in enumerate(sequencia_ordenada):
+                largura_tamanho_tipo = self.tamanhos_itens[tamanho_tipo]
+                if soma_atual + largura_tamanho_tipo <= self.capacidade_bin:
+                    bin_atual.append((i, tamanho_tipo))
+                    soma_atual += largura_tamanho_tipo
+                else:
+                    bins.append(bin_atual)
+                    bin_atual = [(i, tamanho_tipo)]
+                    soma_atual = largura_tamanho_tipo
+            if bin_atual:
+                bins.append(bin_atual)
+            return bins
     
     def fitness(self, individual):
         """Calcula o fitness (número de bins) de um indivíduo"""
@@ -345,7 +380,7 @@ class BRKGA_bins:
         # Adicionar legenda
         legend_handles = []
         for tamanho, cor in cor_map.items():
-            legend_handles.append(patches.Patch(color=cor, label=f'tamanho: x{tamanho:.2f} (qtd: {self.demanda[tamanho]})'))
+            legend_handles.append(patches.Patch(color=cor, label=f'tamanho: x{tamanho:.2f} (qtd: {self.demanda_Q[tamanho]})'))
         
         ax1.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1, 1), 
                 fontsize=8, title="Tipos de Produtos finais (escalados)")

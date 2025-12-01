@@ -32,9 +32,24 @@ def instancia_marques(escala=1.0, multiplicador_demanda=1):
     q = [2,2,1,1,2,2,1,1]
     q_mult = [multiplicador_demanda*x for x in q]
     return T_escalado, q_mult
+
+def instancia_marques_mix(escala_1, escala_2):
+    '''
+    retorna as peças para montar marques_{escala_1} e peças para marques_{escala_2} numa faixa só
+    '''
+    
+    marquesA, qA = instancia_marques(escala_1)
+    marquesB, qB = instancia_marques(escala_2)
+
+    T_final = marquesA + marquesB
+    q_final = qA + qB
+
+    return T_final, q_final
+
+
 # ---------------------------------------------------------------------------------
 
-def debug():
+def rodar_diversas_malhas():
     from bl import Bottom_Left
     from shapely.geometry import Polygon, Point
     from shapely.prepared import prep
@@ -132,246 +147,10 @@ def debug():
             # if pecas_posicionadas:
             #     return max(pos[1][0] for pos in pecas_posicionadas)
             return 9e9
-    def plotar_ispp(W, L, R, C, T, seq, pontos=None, titulo="Resultado do ISPP", 
-                    mostrar_grade=True, mostrar_numeros=True, mostrar_pontos_difp=False,
-                    salvar_arquivo=None, mostrar_plot=True):
-        """
-        Plota o resultado do ISPP (Irregular Strip Packing Problem)
-        
-        Args:
-            W: Largura da faixa
-            L: Comprimento da faixa
-            R: Número de linhas da grade
-            C: Número de colunas da grade
-            T: Lista de polígonos dos tipos
-            seq: Sequência de posicionamento [(tipo, (x,y)), ...]
-            pontos: Lista de pontos DIFP disponíveis (opcional)
-            titulo: Título do gráfico
-            mostrar_grade: Se True, mostra a grade da malha
-            mostrar_numeros: Se True, mostra números dos itens na sequência
-            mostrar_pontos_difp: Se True, mostra os pontos DIFP em fundo
-            salvar_arquivo: Caminho para salvar o gráfico
-        """
-        try:
-            import matplotlib.pyplot as plt
-            import matplotlib.patches as patches
-            from shapely.geometry import Polygon
-            import os
-            fig, ax = plt.subplots(figsize=(14, 10))
-            
-            # Configura limites do gráfico
-            ax.set_xlim(0, L)
-            ax.set_ylim(0, W)
-            ax.set_aspect('equal')
-            
-            # Desenha o retângulo da área útil
-            retangulo = patches.Rectangle((0, 0), L, W, 
-                                        linewidth=2, edgecolor='black', 
-                                        facecolor='lightgray', alpha=0.2)
-            ax.add_patch(retangulo)
-            
-            # Cores para diferentes tipos de polígonos
-            cores = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 
-                    'pink', 'gray', 'olive', 'cyan', 'magenta', 'yellow',
-                    'navy', 'teal', 'coral', 'indigo']
-            
-            # Dicionário para contar ocorrências de cada tipo e controle de legenda
-            contador_tipos = {}
-            tipos_utilizados = set()
-            
-            # Função auxiliar para transladar polígono
-            def _transladar_poligono(poligono, ponto):
-                """Translada um polígono para uma posição específica"""
-                if isinstance(poligono, Polygon):
-                    # Para objetos Polygon do shapely
-                    return Polygon([(x + ponto[0], y + ponto[1]) for x, y in poligono.exterior.coords])
-                else:
-                    # Para lista de vértices
-                    return [(x + ponto[0], y + ponto[1]) for x, y in poligono]
-            
-            # Função auxiliar para calcular área utilizada
-            def _calcular_area_utilizada_sequencia(T, sequencia):
-                """Calcula a área total utilizada pela sequência"""
-                area_total = 0.0
-                for tipo, posicao in sequencia:
-                    if 0 <= tipo < len(T):
-                        poligono = T[tipo]
-                        if isinstance(poligono, Polygon):
-                            area_total += poligono.area
-                        else:
-                            # Calcula área manualmente para lista de vértices
-                            poly = Polygon(poligono)
-                            area_total += poly.area
-                return area_total
-            
-            # Plota cada polígono posicionado da sequência
-            for i, (tipo, posicao) in enumerate(seq):
-                # Verifica se o tipo é válido
-                if 0 <= tipo < len(T):
-                    # Obtém o polígono original do tipo
-                    poligono_original = T[tipo]
-                    
-                    # Translada o polígono para a posição especificada
-                    poligono_posicionado = _transladar_poligono(poligono_original, posicao)
-                    
-                    # Conta ocorrências do tipo
-                    if tipo not in contador_tipos:
-                        contador_tipos[tipo] = 0
-                    contador_tipos[tipo] += 1
-                    tipos_utilizados.add(tipo)
-                    
-                    # Cor baseada no tipo
-                    cor = cores[tipo % len(cores)]
-                    
-                    # Extrai coordenadas do polígono posicionado
-                    if isinstance(poligono_posicionado, Polygon):
-                        x, y = poligono_posicionado.exterior.xy
-                    else:
-                        # Se for lista de vértices
-                        x = [p[0] for p in poligono_posicionado]
-                        y = [p[1] for p in poligono_posicionado]
-                    
-                    # Label para legenda (apenas na primeira ocorrência de cada tipo)
-                    label = f'Tipo {tipo}' if contador_tipos[tipo] == 1 else ""
-                    
-                    # Plota o polígono posicionado
-                    patch = patches.Polygon(list(zip(x, y)), 
-                                        closed=True, 
-                                        edgecolor=cor, 
-                                        facecolor=cor,
-                                        alpha=0.7,
-                                        linewidth=1.0,
-                                        label=label)
-                    ax.add_patch(patch)
-                    
-                    # # Marca o ponto de posicionamento (referência)
-                    # ax.scatter([posicao[0]], [posicao[1]], 
-                    #         color='black', s=40, zorder=10, marker='x', linewidth=2)
-                    
-                    # Adiciona número da sequência no centroide do polígono
-                    if mostrar_numeros:
-                        if isinstance(poligono_posicionado, Polygon):
-                            centroid = poligono_posicionado.centroid
-                            centroid_x, centroid_y = centroid.x, centroid.y
-                        else:
-                            # Calcula centroide manualmente para lista de vértices
-                            centroid_x = sum(x) / len(x)
-                            centroid_y = sum(y) / len(y)
-                        
-                        ax.text(centroid_x, centroid_y, str(i+1), 
-                            fontsize=9, fontweight='bold',
-                            ha='center', va='center',
-                            bbox=dict(boxstyle='circle', facecolor='white', alpha=0.9),
-                            zorder=15)
-            
-            # Plota os pontos DIFP disponíveis em fundo (opcional) #####retirar
-            if mostrar_pontos_difp and pontos:
-                x_vals = [p[0] for p in pontos]
-                y_vals = [p[1] for p in pontos]
-                ax.scatter(x_vals, y_vals, color='gray', s=6, alpha=0.2, 
-                        zorder=1, label=f'Pontos DIFP ({len(pontos)})')
-            
-            # Desenha a grade da malha se solicitado
-            if mostrar_grade:
-                # Calcula espaçamento da grade
-                gx = L / (C - 1) if C > 1 else L
-                gy = W / (R - 1) if R > 1 else W
-                
-                # Linhas verticais
-                for i in range(C):
-                    x = i * gx
-                    ax.axvline(x=x, color='blue', alpha=0.1, linestyle='-', linewidth=0.3)
-                
-                # Linhas horizontais
-                for i in range(R):
-                    y = i * gy
-                    ax.axhline(y=y, color='blue', alpha=0.1, linestyle='-', linewidth=0.3)
-                
-                # Pontos da grade (opcional)
-                pontos_grade_x = []
-                pontos_grade_y = []
-                for i in range(C):
-                    for j in range(R):
-                        pontos_grade_x.append(i * gx)
-                        pontos_grade_y.append(j * gy)
-                
-                ax.scatter(pontos_grade_x, pontos_grade_y, color='blue', s=2, alpha=0.1, 
-                        marker='+', zorder=1)
-            
-            # Calcula comprimento utilizado
-            comprimento_utilizado = 0
-            for tipo, pos in seq:
-                if 0 <= tipo < len(T):
-                    poligono = T[tipo]
-                    if isinstance(poligono, Polygon):
-                        max_x_poligono = max(x for x, y in poligono.exterior.coords)
-                    else:
-                        max_x_poligono = max(x for x, y in poligono)
-                    comprimento_total = pos[0] + max_x_poligono
-                    if comprimento_total > comprimento_utilizado:
-                        comprimento_utilizado = comprimento_total
-            
-            # Linha vertical pontilhada para mostrar a largura
-            if comprimento_utilizado > 0:
-                ax.axvline(x=comprimento_utilizado, color='red', linestyle='--', 
-                          linewidth=1.5, alpha=0.9, 
-                          label=f'largura: {comprimento_utilizado:.3f}')
-            
-            # Configurações do gráfico
-            ax.set_xlabel('Comprimento (L)')
-            ax.set_ylabel('Largura (W)')
-            ax.set_title(titulo, fontsize=14, fontweight='bold')
-            ax.grid(True, alpha=0.2)
-
-            # Remove legendas duplicadas e organiza a legenda
-            handles, labels = ax.get_legend_handles_labels()
-            by_label = dict(zip(labels, handles))
-            ax.legend(by_label.values(), by_label.keys(), loc='upper right', fontsize=9)
-
-            # Calcula estatísticas
-            total_itens = len(seq)
-            area_utilizada = _calcular_area_utilizada_sequencia(T, seq)
-            area_total = W * L
-
-            # Texto informativo
-            info_text = (
-                f"Malha: {W} × {L}   |   "
-                f"Resolução: {R} × {C}   |   "
-                f"Itens: {total_itens}   |   "
-                f"Comprimento utilizado: {comprimento_utilizado:.3f}"
-            )
-
-            # Adiciona as informações logo abaixo do título
-            ax.text(
-                0.5, 1.05, info_text,
-                transform=ax.transAxes,
-                ha='center', va='bottom',
-                fontsize=8, color='black',
-            )
-
-            # Salva o gráfico se solicitado
-            if salvar_arquivo:
-                pasta = "resultados_imagens"
-                if not os.path.exists(pasta):
-                    os.makedirs(pasta)
-                caminho_completo =  salvar_arquivo
-                # caminho_completo = pasta + "/" + salvar_arquivo              
-                plt.savefig(caminho_completo, dpi=300, bbox_inches='tight')
-                print(f"Gráfico do ISPP salvo em: {caminho_completo}")
-
-            if mostrar_plot:
-                plt.tight_layout()
-                plt.show()
-
-            return fig, ax
-        except Exception as e:
-            print(f"Erro ao plotar resultado ISPP: {e}")
-            import traceback
-            traceback.print_exc()
-            return None, None    
-    #-------
+    
     
 
+    #-------
     W=104
     L=75
     T,q = instancia_marques()
@@ -407,25 +186,135 @@ def rodar_robustez():
     modelos_tamanhos = [1.0]
     Q = [1]
     #
-    lista_seeds = range(100)
-
+    lista_seeds = range(12,20)                      #já fiz: [0,10) 10gen, [10,20) 10gen, [0,10) 20gen
+    geracoes = 20
+    #
     for seed_atual in lista_seeds:
         largura_bin = 110
         for i,escala in enumerate(modelos_tamanhos):
             nome = f"seed_{seed_atual}_marques_{escala}_{W}_{L}_{R}_{C}"
             T,q = instancia_marques(escala)
             modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i]) ### não deveria ir Q aqui, tem que reformular pra salvar as instancias, escolher quais vai usar e mandar rodar o PCME
-        nome_conjunto = f"seed_{seed_atual}_marques_pp_p_m_g_gg"
-        modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto,seed=seed_atual)       # rodar só os que estiverem neste dicionário
+        nome_conjunto = f"{geracoes}gen_seed_{seed_atual}_marques_pp_p_m_g_gg"
+        modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto, geracoes=geracoes,seed=seed_atual)       # rodar só os que estiverem neste dicionário
     # modelo.rodar(largura_bin=largura_bin)
 
 
+def histograma_robustez_ispp(salvar_imagem=False, mostrar_plot=True):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    dados = [
+        46.0, 42.0, 44.0, 43.0, 42.0, 42.0, 43.0, 43.0, 43.0, 45.0, 43.0, 45.0,
+        42.0, 43.0, 43.0, 42.0, 42.0, 44.0, 42.0, 43.0, 42.0, 43.0, 43.0, 42.0,
+        43.0, 42.0, 43.0, 43.0, 42.0, 43.0, 42.0, 42.0, 43.0, 42.0, 43.0, 42.0,
+        43.0, 42.0, 43.0, 43.0, 43.0, 44.0, 42.0, 43.0, 43.0, 43.0, 43.0, 43.0,
+        43.0, 43.0, 42.0, 44.0, 42.0, 43.0, 43.0, 43.0, 45.0, 42.0, 42.0, 43.0,
+        42.0, 43.0, 43.0, 43.0, 43.0, 43.0
+    ]
+
+    media = np.mean(dados)
+    mediana = np.median(dados)
+    total_dados = len(dados)
+
+    plt.figure(figsize=(12, 7))
+
+    # bins quebrados em limites corretos para centralizar
+    bins = np.arange(41.5, 47.5, 1)
+
+    n, bins, patches = plt.hist(
+        dados,
+        bins=bins,
+        edgecolor='black',
+        alpha=0.7,
+        color='skyblue'
+    )
+
+    # Adiciona texto centralizado em cada barra
+    for i in range(len(n)):
+        if n[i] > 0:
+            porcentagem = (n[i] / total_dados) * 100
+            x_center = (bins[i] + bins[i+1]) / 2  # centro exato
+            plt.text(
+                x_center, n[i] + 0.3,
+                f"{int(n[i])} ({porcentagem:.1f}%)",
+                ha='center', va='bottom',
+                fontweight='bold', fontsize=11,
+                bbox=dict(boxstyle='round,pad=0.2',
+                          facecolor='white', alpha=0.8)
+            )
+
+    # Lines
+    plt.axvline(media, color='red', linestyle='--', linewidth=2,
+                label=f'Média = {media:.2f}')
+    plt.axvline(mediana, color='orange', linestyle=':', linewidth=2,
+                label=f'Mediana = {mediana:.2f}')
+
+    # Eixos e ajustes
+    plt.title('Histograma - Robustez ISPP', fontsize=14, fontweight='bold')
+    plt.xlabel('Valores')
+    plt.ylabel('Frequência')
+
+    # ticks no centro das barras
+    plt.xticks(np.arange(42, 47, 1))
+
+    plt.grid(axis='y', alpha=0.3)
+    plt.legend()
+    plt.ylim(0, max(n) + 6)
+
+    if salvar_imagem:
+        plt.savefig('histograma_robustez_ispp.png', dpi=300, bbox_inches='tight')
+
+    if mostrar_plot:
+        plt.tight_layout()
+        plt.show()
+    else:
+        plt.close()
+
+    print("=== ESTATÍSTICAS ===")
+    print(f"Média: {media:.2f}")
+    print(f"Mediana: {mediana:.2f}")
+    print(f"Total de dados: {total_dados}")
+
+    print("\n=== FREQUÊNCIAS ===")
+    for i, valor in enumerate(range(42, 47)):
+        porcentagem = (n[i] / total_dados) * 100
+        print(f"Valor {valor}: {int(n[i])} ocorrências ({porcentagem:.1f}%)")
+
+def rodar_pcme_pares_e_unidades():
+    modelo = Modelo()
+    W=104
+    L=75
+    R=105
+    C=76
+
+    largura_bin = 110
+    modelos_tamanhos = [0.85,0.9,1.0,1.06,1.13]
+    Q = [1, 2, 4, 4 ,1]
+    geracoes = 10
+
+    #unid
+    for i,escala in enumerate(modelos_tamanhos):
+        nome = f"marques_{escala}_{W}_{L}_{R}_{C}"
+        T,q = instancia_marques(escala)
+        modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i])
+    #pares
+    for _i, escala_i in enumerate(modelos_tamanhos):
+        for _j, escala_j in enumerate(modelos_tamanhos):
+            nome = f"marques_{escala_i}_+_{escala_j}_{W}_{L}_{R}_{C}"
+            T,q = instancia_marques_mix(escala_1=escala_i, escala_2=escala_j)
+            modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,0)
+    #rodar
+    nome_conjunto = f"{geracoes}gen_marques_mix"
+    modelo.rodar(largura_bin,nome_conjunto,geracoes=geracoes,seed=42,pares_inclusos=True)
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
 # rodar método principal
 # ---------------------------------------------------------------------------------
 def main():
-    rodar_robustez()
+    # rodar_robustez()
+    # histograma_robustez_ispp(salvar_imagem="ispp_histograma_robustez_marques")
+    rodar_pcme_pares_e_unidades()
     pass
 
 # ---------------------------------------------------------------------------------
