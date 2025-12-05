@@ -49,7 +49,7 @@ def instancia_marques_mix(escala_1, escala_2):
 
 # ---------------------------------------------------------------------------------
 
-def rodar_diversas_malhas():
+def rodar_diversas_malhas_msm_sequencia():
     from bl import Bottom_Left
     from shapely.geometry import Polygon, Point
     from shapely.prepared import prep
@@ -198,6 +198,31 @@ def rodar_robustez():
         nome_conjunto = f"{geracoes}gen_seed_{seed_atual}_marques_pp_p_m_g_gg"
         modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto, geracoes=geracoes,seed=seed_atual)       # rodar só os que estiverem neste dicionário
     # modelo.rodar(largura_bin=largura_bin)
+  
+def rodar_marques():
+    modelo = Modelo()
+    # ISPP
+    W=104
+    L=75
+    R=105   
+    C=76
+    modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
+    Q = [8,8,16,16,8]
+    str_Q = "_".join([str(x) for x in Q])
+    
+    geracoes=20
+    seed=42
+    #
+    
+    largura_bin = 110
+    for i,escala in enumerate(modelos_tamanhos):
+        nome = f"marques_{escala}_{W}_{L}_{R}_{C}"
+        T,q = instancia_marques(escala)
+        modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i]) ### não deveria ir Q aqui, tem que reformular pra salvar as instancias, escolher quais vai usar e mandar rodar o PCME
+    nome_conjunto = f"{geracoes}gen_marques_pp_p_m_g_gg_{str_Q}"
+    modelo.rodar(largura_bin=largura_bin, nome_conjunto=nome_conjunto, geracoes=geracoes,seed=seed)       # rodar só os que estiverem neste dicionário
+    # modelo.rodar(largura_bin=largura_bin)
+
 
 
 def histograma_robustez_ispp(salvar_imagem=False, mostrar_plot=True):
@@ -318,7 +343,8 @@ def rodar_pcme_pares_e_unidades():
 def main():
     # rodar_robustez()
     # histograma_robustez_ispp(salvar_imagem="ispp_histograma_robustez_marques")
-    rodar_pcme_pares_e_unidades()
+    # rodar_pcme_pares_e_unidades()
+    rodar_marques()
     pass
 
 # ---------------------------------------------------------------------------------

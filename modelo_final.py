@@ -43,7 +43,7 @@ class Modelo:
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada.\nResolvendo ISPP para a o modelo:",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=geracoes,seed=seed,populacao=50)       # rodar ISPP 10 gerações
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=geracoes,seed=seed,populacao=100)       
                 # seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
@@ -80,7 +80,7 @@ class Modelo:
             print(f"BPP {nome_conjunto}, tempo:{t_total}")
             
             self._salvar_json_resultado_bpp(num_bins,desperdicio,seq_corte,largura_bin,hist,nome_conjunto)
-            # self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
+            self._plotar_resultado_bpp(num_bins,seq_corte,largura_bin,nome=nome_conjunto,titulo=f"BPP:{nome_conjunto}, tempo:{t_total}")
             # Finaliza
         pass
     # -----------------------------------------------------------------------------
