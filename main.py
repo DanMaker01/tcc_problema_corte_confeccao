@@ -207,7 +207,7 @@ def rodar_marques():
     R=105   
     C=76
     modelos_tamanhos = [0.85, 0.9, 1.0, 1.06, 1.13]
-    Q = [8,8,16,16,8]
+    Q = [16,16,32,32,16]
     str_Q = "_".join([str(x) for x in Q])
     
     geracoes=20
