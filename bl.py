@@ -16,31 +16,51 @@ class Bottom_Left():
         self.DIFP = DIFP
         pass
 
-    def rodar(self,verbose = False):
-        pecas_posicionadas = []                     # pecas = [(t,(x,y)), (t,(x,y)), ...]
-        for i,t in enumerate(self.seq_demanda):
+    def rodar(self, verbose=False):
+        pecas_posicionadas = []  # pecas = [(t,(x,y)), (t,(x,y)), ...]
+        
+        for i, t in enumerate(self.seq_demanda):
+            # Acessar DIFP - mantendo a mesma lógica
             S = self.DIFP[t]
             S = [p[1] for p in S]
-            if len(S)<1:
-                print("erro de IFP, refine a manhã ou aumente as dimensões")    # quebrar código?
-            for r in pecas_posicionadas:
-                u,vertice = r
-                translacao = vertice
-                NFP_tr = self._transladar_poligono(Polygon(self.NFP[u,t]),translacao)
-                NFP_tr_discreto = self._discretizar_poligono(NFP_tr,self.W,self.L,self.R,self.C,S,somente_interior=True)
-                S = self._remover_pontos(S,NFP_tr_discreto)
-                if len(S)<1:
-                    if verbose:
-                        print(f"após NFP_{u}_{t}, a peça {t} não coube. refine a malha ou aumente as dimensões.",end="")
-                    return []               # já mata?
-            if len(S)<1:
+            
+            if not S:
                 if verbose:
-                    print(f"RARO: nao sobraram pontos para posicionar peça {t}. refine a malha ou aumente as dimensões")
-                return []                   # já mata?
-            else:
-                vertice = self._escolhe_bottom_left(S)      # ganancioso, escolhe a primeira posição, pois já está ordenado
-                pecas_posicionadas.append((t,vertice))
-        return pecas_posicionadas                           # lista de elementos (t,(x,y))
+                    print("erro de IFP, refine a malha ou aumente as dimensões")
+                return []
+            
+            # Se há peças posicionadas, processar
+            if pecas_posicionadas:
+                # Acumular todos os pontos proibidos de uma vez
+                todos_pontos_proibidos = []
+                
+                for u, vertice in pecas_posicionadas:
+                    translacao = vertice
+                    NFP_tr = self._transladar_poligono(Polygon(self.NFP[u, t]), translacao)
+                    
+                    # Discretizar com os pontos atuais de S
+                    NFP_tr_discreto = self._discretizar_poligono(
+                        NFP_tr, self.W, self.L, self.R, self.C, S, somente_interior=True
+                    )
+                    todos_pontos_proibidos.extend(NFP_tr_discreto)
+                
+                # Remover todos os pontos proibidos de uma só vez
+                S = self._remover_pontos(S, todos_pontos_proibidos)
+                
+                if not S:
+                    if verbose:
+                        print(f"após todas as NFPs, a peça {t} não coube.", end="")
+                    return []
+            
+            if not S:
+                if verbose:
+                    print(f"RARO: não sobraram pontos para peça {t}")
+                return []
+            
+            vertice = self._escolhe_bottom_left(S)
+            pecas_posicionadas.append((t, vertice))
+        
+        return pecas_posicionadas
     
     def _discretizar_poligono(self, poligono:Polygon, W,L,R,C, pontos_a_verificar:list[Tuple],
                               somente_interior:bool=False, epsilon :float = 1e-6):

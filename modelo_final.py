@@ -43,7 +43,7 @@ class Modelo:
             if inst.l == None:                              # se não tem a largura, calcula-a.
                 print("largura não calculada.\nResolvendo ISPP para a o modelo:",modelo_str)
                 t0 = time.time()
-                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=geracoes,seed=seed)       # rodar ISPP 10 gerações
+                seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=geracoes,seed=seed,populacao=50)       # rodar ISPP 10 gerações
                 # seq,larg,pecas_posicionadas = self.resolver_ispp(inst.W,inst.L,inst.R,inst.C,inst.T,inst.q,inst.NFP,inst.IFP,gens=10,seed=42)       # rodar ISPP 10 gerações
                 t_total=time.time()-t0
                 inst.l = larg
@@ -52,7 +52,8 @@ class Modelo:
                     inst.W, inst.L, inst.R, inst.C, inst.T, pecas_posicionadas,
                     salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",
                     mostrar_plot=False,
-                    titulo=f"ISPP:{modelo_str}, tempo:{t_total:.0f}"
+                    titulo=f"ISPP:{modelo_str}, tempo:{t_total:.0f}",
+
                 )
 
         # agora todos modelos tem sua largura.
@@ -62,7 +63,7 @@ class Modelo:
             print("\n >>>>>> PARES INCLUSOS!!\n")
             print("rodando o PCME diferenciado para lidar com pares")
             t0=time.time()
-            num_bins, desperdicio,seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas, self.largura_bin, gens=100000,pares_inclusos=pares_inclusos)
+            num_bins, desperdicio,seq_corte, largura_bin, hist = self.resolver_bpp(self.modelos_roupas, self.largura_bin, gens=10000,pares_inclusos=pares_inclusos)
             t_total=time.time()-t0
 
             #lógica para lidar com pares, bpp deve ser um pouco diferente 
@@ -111,11 +112,11 @@ class Modelo:
                 self._salvar_json_instancia(modelo_str,inst)
                 # modificou_modelos_roupas=True
         pass
-    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D,gens=10,seed=42):
+    def resolver_ispp(self,W,L,R,C,T:list,q:list,NFP,IFP_D,gens=10,seed=42,populacao=100):
         #verificar se é possível
         #verificar se é possível###############
         modelo_ispp = Modelo_ISPP(W,L,R,C,T,q,NFP,IFP_D)
-        resultado_menor_faixa = modelo_ispp.rodar(gens=gens,seed=seed)
+        resultado_menor_faixa = modelo_ispp.rodar(gens=gens,seed=seed,populacao=populacao)
         return resultado_menor_faixa        # (best_sequence, best_fitness, best_pecas_posicionadas )
     def resolver_bpp(self,modelos:dict, largura_bin:float,gens=100000,seed=42,pares_inclusos=False):
         ######verificar se é possível

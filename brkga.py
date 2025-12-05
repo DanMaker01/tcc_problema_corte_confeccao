@@ -127,7 +127,7 @@ class BRKGA_ordem:
 
 # ---------------------------------------------------------------------------------
 class BRKGA_bins:
-    def __init__(self, tamanhos_itens, demanda_Q, capacidade_bin, pop_size=100, elite_frac=0.2, 
+    def __init__(self, larguras_produtos, demanda_Q, capacidade_bin, pop_size=100, elite_frac=0.2, 
                  mutant_frac=0.4, prob_heranca=0.6, seed=None,pares_inclusos=False):
         """
         Args:
@@ -143,7 +143,7 @@ class BRKGA_bins:
             np.random.seed(seed)
             random.seed(seed)
         
-        self.tamanhos_itens = tamanhos_itens
+        self.larguras_produtos = larguras_produtos
         self.demanda_Q = demanda_Q
         self.capacidade_bin = capacidade_bin
         
@@ -163,6 +163,19 @@ class BRKGA_bins:
         """Gera um vetor de R^n onde cada componente pertence à [0,1]"""
         return [random.random() for _ in range(self.n)]
     
+    def largura_par(self,t1:int,t2:int):
+        #
+        def _indice_par_em_T(i,j,n):
+            return n*i + (j-i) - (i*(i-1))/2
+        #
+        if t1>t2:
+            aux = t1
+            t1 = t2
+            t2 = aux
+        
+        largura_par = self.larguras_produtos[_indice_par_em_T(t1,t2,)]
+        return largura_par
+
     def decode(self, individual): #!
         """Decodifica um indivíduo em uma solução de bin packing"""
         # Monta uma lista fixa com a demanda usando os tamanhos reais
@@ -200,7 +213,7 @@ class BRKGA_bins:
                     i += 2
                 else:
                     # Só sobrou um item -> par unitário
-                    largura_par = self.tamanhos_itens[t1]
+                    largura_par = self.larguras_produtos[t1]
                     par = [(idx1, t1)]
                     i += 1
 
@@ -219,7 +232,7 @@ class BRKGA_bins:
             return bins
         else:
             for i, tamanho_tipo in enumerate(sequencia_ordenada):
-                largura_tamanho_tipo = self.tamanhos_itens[tamanho_tipo]
+                largura_tamanho_tipo = self.larguras_produtos[tamanho_tipo]
                 if soma_atual + largura_tamanho_tipo <= self.capacidade_bin:
                     bin_atual.append((i, tamanho_tipo))
                     soma_atual += largura_tamanho_tipo
@@ -288,7 +301,7 @@ class BRKGA_bins:
         # Calcular desperdício para informação adicional
         desperdicio_total = 0.0
         for bin in bins:
-            soma_bin = sum(self.tamanhos_itens[tamanho] for _, tamanho in bin)
+            soma_bin = sum(self.larguras_produtos[tamanho] for _, tamanho in bin)
             desperdicio_total += self.capacidade_bin - soma_bin
         
         # Formatar sequência de corte (apenas os tamanhos)
@@ -309,8 +322,8 @@ class BRKGA_bins:
             nome_arquivo: nome do arquivo para salvar a imagem (opcional)
         """
         # Configurações de cores
-        cores = plt.cm.Set3(np.linspace(0, 1, len(self.tamanhos_itens)))
-        cor_map = {tamanho: cor for tamanho, cor in zip(self.tamanhos_itens.keys(), cores)}
+        cores = plt.cm.Set3(np.linspace(0, 1, len(self.larguras_produtos)))
+        cor_map = {tamanho: cor for tamanho, cor in zip(self.larguras_produtos.keys(), cores)}
         
         # Criar figura com subplots
         if historico_fitness is not None:
@@ -346,19 +359,19 @@ class BRKGA_bins:
             soma_bin = sum(bin_itens)
             
             for tamanho in bin_itens:
-                largura_tamanho_tipo = self.tamanhos_itens[tamanho]
+                largura_tamanho_tipo = self.larguras_produtos[tamanho]
                 ax1.add_patch(patches.Rectangle(
                     (x_current, y_start), largura_tamanho_tipo, bin_height,
                     facecolor=cor_map[tamanho], edgecolor='black', alpha=0.7
                 ))
                 
                 # Adicionar texto do tamanho se houver espaço
-                if self.tamanhos_itens[tamanho] > self.capacidade_bin * 0.1:
-                    ax1.text(x_current + self.tamanhos_itens[tamanho]/2, y_start + bin_height/2, 
+                if self.larguras_produtos[tamanho] > self.capacidade_bin * 0.1:
+                    ax1.text(x_current + self.larguras_produtos[tamanho]/2, y_start + bin_height/2, 
                             f'{largura_tamanho_tipo:.2f}', ha='center', va='center', 
                             fontsize=8, fontweight='bold')
                 
-                x_current += self.tamanhos_itens[tamanho]
+                x_current += self.larguras_produtos[tamanho]
             
             # Barra de utilização
             utilizacao = soma_bin / self.capacidade_bin

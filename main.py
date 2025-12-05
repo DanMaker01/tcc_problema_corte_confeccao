@@ -284,14 +284,15 @@ def histograma_robustez_ispp(salvar_imagem=False, mostrar_plot=True):
 def rodar_pcme_pares_e_unidades():
     modelo = Modelo()
     W=104
-    L=75
+    L=122
     R=105
-    C=76
+    C=123
 
     largura_bin = 110
     modelos_tamanhos = [0.85,0.9,1.0,1.06,1.13]
-    Q = [1, 2, 4, 4 ,1]
-    geracoes = 10
+    Q = [1, 2, 2, 2 ,1]
+    
+    geracoes = 2
 
     #unid
     for i,escala in enumerate(modelos_tamanhos):
@@ -300,10 +301,13 @@ def rodar_pcme_pares_e_unidades():
         modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,Q[i])
     #pares
     for _i, escala_i in enumerate(modelos_tamanhos):
-        for _j, escala_j in enumerate(modelos_tamanhos):
+        for _j in range(_i, len(modelos_tamanhos)):   # j >= i
+            escala_j = modelos_tamanhos[_j]
+
             nome = f"marques_{escala_i}_+_{escala_j}_{W}_{L}_{R}_{C}"
-            T,q = instancia_marques_mix(escala_1=escala_i, escala_2=escala_j)
-            modelo.adicionar_modelo_roupa(nome,T,q,W,L,R,C,0)
+            T, q = instancia_marques_mix(escala_1=escala_i, escala_2=escala_j)
+            modelo.adicionar_modelo_roupa(nome, T, q, W, L, R, C, 0)
+
     #rodar
     nome_conjunto = f"{geracoes}gen_marques_mix"
     modelo.rodar(largura_bin,nome_conjunto,geracoes=geracoes,seed=42,pares_inclusos=True)
