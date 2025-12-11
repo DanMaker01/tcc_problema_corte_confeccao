@@ -93,7 +93,11 @@ class BRKGA_ordem:
     def evolve(self, demanda_q, gens: int = 100, verbose=True) -> Tuple[List[int], float]:
         """Executa o processo evolutivo do BRKGA."""
         log_interval = 1 if verbose is True else (verbose if isinstance(verbose, int) else None)
-        
+        #
+        import time
+        tempo_final = 0
+        tempo_inicial = time.time()
+        #
         for gen in range(gens):
             evaluated = self.evaluate_population(demanda_q)
             current_best_fitness, current_best_chrom, current_best_pecas_posicionadas = evaluated[0]
@@ -111,8 +115,9 @@ class BRKGA_ordem:
                 self.best_pecas_posicionadas = current_best_pecas_posicionadas
             # Log de progresso
             if log_interval and gen % log_interval == 0:
-                print(f"Gen {gen:03d}: Best = {current_best_fitness:.4f} | Valid = {len(evaluated)}")
-
+                tempo_final = time.time()
+                print(f"Gen {gen:03d}: Best = {current_best_fitness:.4f} | Tempo parcial {(tempo_final-tempo_inicial):.1f} ")
+                tempo_inicial = time.time()
             # Nova população
             self._create_new_population(evaluated)
 

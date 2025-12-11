@@ -210,7 +210,7 @@ def rodar_marques():
     Q = [16,16,32,32,16]
     str_Q = "_".join([str(x) for x in Q])
     
-    geracoes=20
+    geracoes=10
     seed=42
     #
     

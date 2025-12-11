@@ -84,7 +84,7 @@ class Modelo_ISPP:
             
         except Exception as e:
             print(f"Erro ao medir largura da faixa BL: {e}")
-            # Fallback: retorna o maior x das posições se houver erro com os polígonos
+            # Fallback: retorna o maior x das posições se houver erro com os polígonosa
             # if pecas_posicionadas:
             #     return max(pos[1][0] for pos in pecas_posicionadas)
             return 9e9
