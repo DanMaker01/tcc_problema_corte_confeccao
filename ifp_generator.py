@@ -50,65 +50,7 @@ def from_clipper_coords(clipper_paths, scale=10000000):
 from shapely.geometry import Polygon, MultiPolygon
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon as MplPolygon
-# def calculate_ifp(container_rectangle: Polygon, piece_polygon: Polygon) -> Polygon:
-#     """
-#     Calcula o Inner-Fit Polygon (IFP) usando a abordagem correta de No-Fit Polygon.
-#     O IFP representa todas as posições válidas onde a peça pode ser colocada dentro do container
-#     sem violar as restrições de contorno.
-#     """
-#     # Converter para coordenadas do pyclipper
-#     scale = 10000000
-    
-#     # Container (fronteira externa)
-#     container_paths = to_clipper_coords(container_rectangle, scale)
-#     if not container_paths:
-#         return Polygon()
-    
-#     # Peça
-#     piece_paths = to_clipper_coords(piece_polygon, scale)
-#     if not piece_paths:
-#         return Polygon()
-    
-#     # Criar instância do pyclipper
-#     pc = pyclipper.Pyclipper()
-    
-#     # Para IFP, queremos a interseção entre o container expandido (Minkowski difference)
-#     # Na verdade, IFP é o container "reduzido" pela forma da peça
-    
-#     # Usar diferença de Minkowski: IFP = container ⊖ (-peça)
-#     # Isso é equivalente a fazer a diferença entre o container e a peça transladada
-    
-#     # Primeiro, precisamos inverter a peça (reflexão na origem)
-#     inverted_piece = pyclipper.PyclipperOffset()
-#     inverted_piece.AddPaths(piece_paths, pyclipper.JT_MITER, pyclipper.ET_CLOSEDPOLYGON)
-    
-#     # Para IFP, usamos a abordagem de diferença com offset
-#     # IFP representa todas as posições onde a peça cabe completamente dentro do container
-    
-#     # Abordagem correta: calcular o "inner offset" do container pela peça
-#     pc.AddPaths(container_paths, pyclipper.PT_SUBJECT, True)
-    
-#     # Para IFP, queremos todas as posições onde a peça não ultrapassa o container
-#     # Isso é equivalente a: IFP = container ⊖ piece_rotated(180°)
-    
-#     # Inverter a peça (rotação de 180 graus)
-#     inverted_piece_paths = []
-#     for path in piece_paths:
-#         inverted_path = [[-x, -y] for x, y in path]
-#         inverted_piece_paths.append(inverted_path)
-    
-#     # Adicionar a peça invertida como clip
-#     pc.AddPaths(inverted_piece_paths, pyclipper.PT_CLIP, True)
-    
-#     # Executar operação de diferença
-#     solution = pc.Execute(pyclipper.CT_DIFFERENCE, pyclipper.PFT_NONZERO, pyclipper.PFT_NONZERO)
-    
-#     # Converter de volta para Shapely
-#     if solution:
-#         result = from_clipper_coords(solution, scale)
-#         return result if result else Polygon()
-#     else:
-#         return Polygon()
+
 
 def calculate_ifp(container_rectangle: Polygon, piece_polygon: Polygon) -> Polygon:
     """

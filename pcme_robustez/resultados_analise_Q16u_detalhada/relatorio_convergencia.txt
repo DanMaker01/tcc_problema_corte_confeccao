@@ -1,0 +1,8 @@
+RELATÓRIO DE CONVERGÊNCIA
+==================================================
+
+Estado: VELOCIDADE BAIXA mas população ainda diversa
+Média final: 53.200000
+DP final: 0.421637
+Velocidade média últimas 100: 0.000000
+Melhoria últimas 500: 0.00%
