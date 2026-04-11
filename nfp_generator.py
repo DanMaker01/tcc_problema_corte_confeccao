@@ -64,6 +64,11 @@ def calculate_nfp(polygon_a:Polygon, polygon_b:Polygon, ref_point_a=(0, 0), ref_
         O NFP mostrando as posições válidas do ponto de referência de B
     """
     
+    if type(polygon_a) == list:
+        polygon_a = Polygon(polygon_a)
+
+    if type(polygon_b) == list:
+        polygon_b = Polygon(polygon_b)
 
     # 1. Translada polígono A para que ref_point_a fique na origem
     a_translation_x = -ref_point_a[0]

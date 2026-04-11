@@ -14,6 +14,7 @@ class BRKGA_ordem:
         if seed is not None:
             np.random.seed(seed)
             random.seed(seed)
+            
 
         self.n = n
         self.fitness_func = fitness_func
@@ -27,6 +28,7 @@ class BRKGA_ordem:
         
         # População inicial
         self.population = np.random.random((pop_size, n)).astype(float)
+        print(self.population)
         
         # Melhor solução global
         self.best_sequence = None
@@ -425,4 +427,5 @@ class BRKGA_bins:
             print(f"Imagem salva como: {nome_arquivo}")
         
         plt.show()
+    
 # ---------------------------------------------------------------------------------

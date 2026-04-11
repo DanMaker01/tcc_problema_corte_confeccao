@@ -53,9 +53,7 @@ class Modelo:
                     salvar_arquivo=f"{modelo_str}_menor_strip_{inst.l}.png",
                     mostrar_plot=False,
                     titulo=f"ISPP:{modelo_str}, tempo:{t_total:.0f}",
-
                 )
-
         # agora todos modelos tem sua largura.
         
         # BPP
