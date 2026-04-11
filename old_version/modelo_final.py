@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Tuple
 from shapely.geometry import Polygon, Point
 from shapely.prepared import prep
-from instancia import Instancia
+from old_version.instancia import Instancia
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np

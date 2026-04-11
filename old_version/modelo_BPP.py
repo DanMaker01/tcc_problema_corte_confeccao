@@ -1,6 +1,6 @@
 # -----------------------------------------------------
-from brkga import BRKGA_bins
-from instancia import Instancia
+from old_version.brkga import BRKGA_bins
+from old_version.instancia import Instancia
 # -----------------------------------------------------
 
 # -----------------------------------------------------
