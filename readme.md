@@ -14,6 +14,7 @@ python main.py
 ## À fazer:
 
 - calcular desperdício para cada ISPP
-- definir bem o debug
+- Modularizar a main.py
 - verificar se está tudo certo ao usar malhas distintas no mesmo PCME
+- definir bem o Debug
 - apagar coisas desnecessárias (prints, comentários, ...)
