@@ -1,6 +1,6 @@
 # --------------------------------------------
 from brkga import BRKGA_ordem
-from bl import Bottom_Left
+from src.bl import Bottom_Left
 from typing import List, Tuple
 # --------------------------------------------
 

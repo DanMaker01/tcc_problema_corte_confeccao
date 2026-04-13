@@ -50,11 +50,11 @@ def instancia_marques_mix(escala_1, escala_2):
 # ---------------------------------------------------------------------------------
 
 def rodar_diversas_malhas_msm_sequencia():
-    from bl import Bottom_Left
+    from src.bl import Bottom_Left
     from shapely.geometry import Polygon, Point
     from shapely.prepared import prep
-    from nfp_generator import calculate_nfp
-    from ifp_generator import calculate_ifp
+    from src.nfp_generator import calculate_nfp
+    from src.ifp_generator import calculate_ifp
 
     def gerar_pontos_malha(W,L,R,C) -> dict:
         '''

@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------------------------
-import ifp_generator 
-import nfp_generator 
+import src.ifp_generator as ifp_generator 
+import src.nfp_generator as nfp_generator 
 from modelo_ISPP import *
 from modelo_BPP import *
 import json

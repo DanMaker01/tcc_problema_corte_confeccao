@@ -5,18 +5,18 @@ from shapely.prepared import prep
 from typing import List, Tuple
 import numpy as np
 # Internos
-import ifp_generator
-import nfp_generator
-from bl import Bottom_Left
+import src.ifp_generator as ifp_generator
+import src.nfp_generator as nfp_generator
+from src.bl import Bottom_Left
 import json
 import os
+import time
 
 # -------------------------------------
 # Cache ISPP
 def _cache_filename(modelo, W, L, R, C, seed, gens):
     """nome_modelo_W_L_R_C_seed_gens.json"""
-    L_str = f"{L:.2f}".replace('.', '_')
-    return f"cache/{modelo}_W{W}_L{L_str}_R{R}_C{C}_seed{seed}_gens{gens}.json"
+    return f"cache_ispp/{modelo}_W{W}_L{L}_R{R}_C{C}_s{seed}_g{gens}.json"
 
 def _load_cache(modelo, W, L, R, C, seed, gens):
     fname = _cache_filename(modelo, W, L, R, C, seed, gens)
@@ -27,7 +27,7 @@ def _load_cache(modelo, W, L, R, C, seed, gens):
     return data['seq'], data['fitness'], [(t, tuple(p)) for t, p in data['pecas']]
 
 def _save_cache(modelo, W, L, R, C, seed, gens, seq, fitness, pecas):
-    os.makedirs("cache", exist_ok=True)
+    os.makedirs("cache_ispp", exist_ok=True)
     data = {
         'seq': seq,
         'fitness': fitness,
@@ -498,7 +498,9 @@ def brkga_bins(l,Q,largura_bin,pop_size=100,elite_frac=0.3,mutant_frac=0.4,prob_
     nome_arquivo = ""  
     
     nome_arquivo = "_".join(f"{modelo_nome}_{Q[modelo_nome]}" for modelo_nome in Q.keys())
-    nome_arquivo = nome_arquivo+"_seed"+str(seed)+"_gens"+str(gens)+".png"
+    caminho_base = "imagens/"
+    nome_arquivo = caminho_base+nome_arquivo+"_seed"+str(seed)+"_gens"+str(gens)+".png"
+    
     plotar_resultado_bins(l,
                           largura_bin,
                           sequencia_corte,
@@ -518,7 +520,7 @@ import matplotlib.patches as patches
 from matplotlib.patches import Polygon as MplPolygon
 
         
-def visualizar_posicionamento(T, pecas_posicionadas, W, L, titulo="Posicionamento das Peças", nome_arquivo=None, modelo_nome=None, mostrar_visualizacao=False):
+def visualizar_posicionamento(T, pecas_posicionadas, W, L, titulo="Posicionamento das Peças", nome_arquivo=None, mostrar_visualizacao=False):
     """
     Visualiza as peças posicionadas na faixa.
     
@@ -590,14 +592,10 @@ def visualizar_posicionamento(T, pecas_posicionadas, W, L, titulo="Posicionament
     
     # Salvar a imagem se nome_arquivo foi fornecido
     if nome_arquivo is not None:
+        os.makedirs("imagens", exist_ok=True)
         plt.savefig(nome_arquivo, dpi=300, bbox_inches='tight')
         print(f"Imagem salva como: {nome_arquivo}")
-    elif modelo_nome is not None:
-        # Gera nome automático no formato: modelo_nome_W_R_C_L.png
-        nome_auto = f"{modelo_nome}_W{W}_R{int(W*100)}_{L:.2f}.png"
-        plt.savefig(nome_auto, dpi=300, bbox_inches='tight')
-        print(f"Imagem salva como: {nome_auto}")
-
+    
     if mostrar_visualizacao:
         plt.show()
 # -------------------------------------
@@ -779,15 +777,18 @@ def main():
             seed = modelo_params["seed"]
             gens = modelo_params["gens"]
             
-            pop_size = 100    ###### arbitrário
+            pop_size = 100    ###### arbitrário, min 10
             print(f"Executando BRKGA para: {modelo_nome} | pop={pop_size}, gens={gens}, seed={seed} |")
             cache = _load_cache(modelo_nome, W, L, R, C, seed, gens)
             if cache:
                 seq_melhor, fitness_melhor, pecas_pos_melhor = cache
                 print(f"Modelo já resolvido (json encontrado): {modelo_nome}, fitness: {fitness_melhor:.2f}")
             else:
+                t0 = time.time()
                 seq_melhor, fitness_melhor, pecas_pos_melhor = brkga_ordem(T,q,W,L,R,C,NFP,IFP_D,
                                                                         pop=pop_size,gens=gens,seed=seed)
+                tf= time.time()
+                print(f"tempo: {tf-t0}")
                 _save_cache(modelo_nome, W, L, R, C, seed, gens, seq_melhor, fitness_melhor, pecas_pos_melhor)
 
             l[modelo_nome] = fitness_melhor # registrar largura l da faixa
@@ -798,18 +799,19 @@ def main():
             # print(f"Número de peças posicionadas: {len(pecas_pos_melhor)}")
             
             # Visualiza o resultado
-            # No main(), onde você chama visualizar_posicionamento:
             if pecas_pos_melhor:
+                os.makedirs("cache_ispp", exist_ok=True)
                 # Gera o nome do arquivo no formato desejado
-                nome_imagem = f"{modelo_nome}_W{W}_R{R}_C{C}_L{fitness_melhor:.2f}_g{gens}_s{seed}.png"
-                
+                caminho_base = "imagens/"
+                nome_imagem = f"{modelo_nome}_W{W}_L{L}_R{R}_C{C}_s{seed}_g{gens}_fit{fitness_melhor:.2f}.png"
+                nome_imagem = caminho_base+nome_imagem
                 visualizar_posicionamento(
                     T, 
                     pecas_pos_melhor, 
                     W, 
                     fitness_melhor,
                     titulo=f"{modelo_nome} - Comprimento: {fitness_melhor:.2f}",
-                    nome_arquivo=nome_imagem,  # ou pode usar modelo_nome=modelo_nome para gerar automaticamente
+                    nome_arquivo=nome_imagem, 
                     mostrar_visualizacao=False
                 )
                 print()
@@ -856,12 +858,14 @@ def main():
         num_bins, desperdicio, seq_corte, hist = cache_pcme
         print(f"Cache PCME hit: {num_bins} bins, desperdício: {desperdicio:.2f}")
     else:
+        t0 = time.time()
         num_bins, desperdicio, seq_corte, hist = brkga_bins(l, Q, capacidade_bin,
                                                             pop_size, elite_frac, mutant_frac, prob_her,
                                                             brkga_bins_seed, brkga_bins_gens)
+        tf= time.time()
         _save_cache_pcme(Q, capacidade_bin, brkga_bins_seed, brkga_bins_gens, 
                         num_bins, desperdicio, seq_corte, hist)
-
+        print(f"tempo: {tf-t0}")
     
     print("num_bins:",num_bins)
     print("desperdicio:",desperdicio)
